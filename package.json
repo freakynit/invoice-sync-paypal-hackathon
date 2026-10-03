@@ -1,0 +1,59 @@
+{
+  "name": "invoice-sync",
+  "version": "1.0.0",
+  "description": "Invoice Sync — match Google Drive invoices against PayPal transactions",
+  "type": "module",
+  "main": "dist/server.js",
+  "scripts": {
+    "build": "tsc",
+    "start": "node dist/server.js",
+    "dev": "tsx watch src/server.ts",
+    "migrate": "tsx src/db/migrate-cli.ts",
+    "generate:invoices": "tsx scripts/generate-invoices.ts",
+    "test": "npm run build && node --test tests/*.test.mjs",
+    "seed:paypal": "tsx scripts/seed-paypal.ts",
+    "import:paypal-seed": "tsx scripts/import-paypal-seed.ts",
+    "generate:paypal-transactions-and-invoices": "tsx scripts/generate-paypal-transactions-and-invoices.ts",
+    "generate:invoices-from-paypal-transactions": "tsx scripts/generate-invoices-from-paypal-transactions.ts"
+  },
+  "engines": {
+    "node": ">=20.16.0"
+  },
+  "dependencies": {
+    "@clerk/backend": "^3.22.0",
+    "bcryptjs": "^2.4.3",
+    "cookie-parser": "^1.4.6",
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.5",
+    "express": "^4.21.2",
+    "googleapis": "^144.0.0",
+    "helmet": "^8.0.0",
+    "imap-simple": "^5.1.0",
+    "jsonwebtoken": "^9.0.2",
+    "morgan": "^1.10.0",
+    "nodemailer": "^6.9.14",
+    "openai": "^4.67.3",
+    "p-limit": "^6.1.0",
+    "pg": "^8.12.0",
+    "uuid": "^11.0.5",
+    "yaml": "^2.6.1",
+    "zod": "^3.23.8",
+    "pdfjs-dist": "~5.4.0",
+    "@napi-rs/canvas": "^0.1.88"
+  },
+  "devDependencies": {
+    "@types/bcryptjs": "^2.4.6",
+    "@types/cookie-parser": "^1.4.8",
+    "@types/cors": "^2.8.17",
+    "@types/express": "^4.17.21",
+    "@types/jsonwebtoken": "^9.0.9",
+    "@types/morgan": "^1.9.9",
+    "@types/node": "^22.7.4",
+    "@types/nodemailer": "^6.4.16",
+    "@types/pg": "^8.11.0",
+    "@types/uuid": "^10.0.0",
+    "tsx": "^4.19.1",
+    "typescript": "^5.6.2"
+  },
+  "license": "MIT"
+}

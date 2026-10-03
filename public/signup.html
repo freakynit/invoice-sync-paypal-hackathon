@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Sign up — Invoice Sync</title>
+<link rel="icon" type="image/svg+xml" href="/logo.svg" />
+<link rel="icon" type="image/png" sizes="32x32" href="/favicon-32.png" />
+<link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/app.css" />
+</head>
+<body>
+<header class="topbar"><div class="wrap" style="display:flex;align-items:center;gap:12px;width:100%;">
+<a class="brand" href="/"><img class="brand-mark" src="/logo.svg" width="30" height="30" alt="" /><span><span class="brand-name">Invoice Sync</span><br><span class="brand-sub">Drive ↔ PayPal reconciliation</span></span></a>
+<span style="flex:1"></span><a class="btn btn-quiet" href="/login">Log in</a>
+</div></header>
+<main class="auth-wrap">
+  <div class="card auth-card">
+    <h1>Create your account</h1>
+    <p class="sub">Sync Drive invoices against PayPal transactions in minutes.</p>
+    <div class="form-err" id="err"></div>
+    <div class="form-ok" id="ok"></div>
+    <form id="f">
+      <div class="field"><label class="lbl-field" for="name">Name (optional)</label><input class="inp" id="name" autocomplete="name" placeholder="Ada Lovelace" /></div>
+      <div class="field"><label class="lbl-field" for="email">Email</label><input class="inp" id="email" type="email" required autocomplete="email" placeholder="you@company.com" /></div>
+      <div class="field"><label class="lbl-field" for="password">Password (at least 12 characters)</label><input class="inp" id="password" type="password" required autocomplete="new-password" placeholder="••••••••" /></div>
+      <button class="btn btn-primary" style="width:100%;justify-content:center;" type="submit" id="btn">Create account</button>
+    </form>
+    <div class="divider">or</div>
+    <button class="btn btn-ghost google-btn" id="googleBtn" type="button">Continue with Google</button>
+    <div class="divider">judges: no keys? try demo</div>
+    <button class="btn btn-primary" id="demoBtn" type="button" style="width:100%;justify-content:center;">Try Demo — no keys needed</button>
+    <p class="auth-alt">Already have an account? <a href="/login">Log in</a></p>
+  </div>
+</main>
+<script type="module">
+import { api, toast, showFormError, showFormOk } from '/app.js';
+const f = document.getElementById('f');
+f.addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const btn = document.getElementById('btn');
+  btn.disabled = true;
+  try {
+    await api('/api/auth/signup', { method: 'POST', body: { name: document.getElementById('name').value, email: document.getElementById('email').value, password: document.getElementById('password').value } });
+    showFormOk('ok', 'Account created. Check your email for the verification link, then log in.');
+    toast('Verification email sent');
+  } catch (err) { showFormError('err', err.message); } finally { btn.disabled = false; }
+});
+document.getElementById('googleBtn').addEventListener('click', async () => {
+  try {
+    window.location.href = '/clerk-login?flow=signup';
+  } catch (err) { showFormError('err', err.message); }
+});
+document.getElementById('demoBtn').addEventListener('click', async (e) => {
+  const btn = e.currentTarget;
+  btn.disabled = true;
+  btn.textContent = 'Preparing demo workspace…';
+  try {
+    await api('/api/auth/demo', { method: 'POST', body: {} });
+    window.location.href = '/dashboard';
+  } catch (err) { showFormError('err', err.message); btn.disabled = false; btn.textContent = 'Try Demo — no keys needed'; }
+});
+</script>
+</body>
+</html>

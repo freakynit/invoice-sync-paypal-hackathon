@@ -1,0 +1,97 @@
+{
+  "run": "MATCH-1790999818886",
+  "unit": {
+    "invoice_id": "MATCH-1790999818886-01",
+    "description": "Exact structured invoice match",
+    "amount": {
+      "currency_code": "USD",
+      "value": "11.13"
+    }
+  },
+  "httpStatus": 201,
+  "order": {
+    "id": "9C667654K61931135",
+    "status": "COMPLETED",
+    "payment_source": {
+      "card": {
+        "name": "Invoice Sync Tester",
+        "last_digits": "1881",
+        "expiry": "2030-12",
+        "brand": "VISA",
+        "type": "CREDIT",
+        "bin_details": {}
+      }
+    },
+    "purchase_units": [
+      {
+        "reference_id": "default",
+        "payments": {
+          "captures": [
+            {
+              "id": "3NW819267G615051T",
+              "status": "COMPLETED",
+              "amount": {
+                "currency_code": "USD",
+                "value": "11.13"
+              },
+              "final_capture": true,
+              "seller_protection": {
+                "status": "NOT_ELIGIBLE"
+              },
+              "seller_receivable_breakdown": {
+                "gross_amount": {
+                  "currency_code": "USD",
+                  "value": "11.13"
+                },
+                "paypal_fee": {
+                  "currency_code": "USD",
+                  "value": "0.78"
+                },
+                "net_amount": {
+                  "currency_code": "USD",
+                  "value": "10.35"
+                }
+              },
+              "invoice_id": "MATCH-1790999818886-01",
+              "links": [
+                {
+                  "href": "https://api.sandbox.paypal.com/v2/payments/captures/3NW819267G615051T",
+                  "rel": "self",
+                  "method": "GET"
+                },
+                {
+                  "href": "https://api.sandbox.paypal.com/v2/payments/captures/3NW819267G615051T/refund",
+                  "rel": "refund",
+                  "method": "POST"
+                },
+                {
+                  "href": "https://api.sandbox.paypal.com/v2/checkout/orders/9C667654K61931135",
+                  "rel": "up",
+                  "method": "GET"
+                }
+              ],
+              "create_time": "2026-10-03T03:57:02Z",
+              "update_time": "2026-10-03T03:57:02Z",
+              "network_transaction_reference": {
+                "id": "807749172194801",
+                "network": "VISA"
+              },
+              "processor_response": {
+                "avs_code": "A",
+                "cvv_code": "M",
+                "response_code": "0000"
+              }
+            }
+          ]
+        }
+      }
+    ],
+    "links": [
+      {
+        "href": "https://api.sandbox.paypal.com/v2/checkout/orders/9C667654K61931135",
+        "rel": "self",
+        "method": "GET"
+      }
+    ]
+  }
+}

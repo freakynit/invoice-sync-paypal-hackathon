@@ -1,0 +1,1693 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Dashboard — Invoice Sync</title>
+<link rel="icon" type="image/svg+xml" href="/logo.svg" />
+<link rel="icon" type="image/png" sizes="32x32" href="/favicon-32.png" />
+<link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/app.css" />
+<link rel="stylesheet" href="/dashboard.css" />
+<style>
+  #demoBanner{display:flex;align-items:center;gap:10px;flex-wrap:wrap;background:#0B4F49;color:#fff;border-radius:12px;padding:10px 14px;margin-bottom:14px;font-size:13px;}
+  #demoBanner[hidden]{display:none;}
+  #demoBanner .btn{background:#fff;color:#0B4F49;}
+  /* Persistent "switch to demo" entry — visible on every tab, hidden in demo mode itself */
+  #demoSwitchBtn{
+    background:linear-gradient(180deg,#F59E0B,#D97706); border:1px solid #B45309; color:#fff;
+    font-weight:700; box-shadow:0 6px 16px -6px rgba(217,119,6,.65);
+  }
+  #demoSwitchBtn:hover{filter:brightness(1.07);}
+  #demoSwitchBtn[hidden]{display:none;}
+  .demo-nav{
+    margin-top:8px; border:1px dashed #D97706 !important; color:#92400E !important;
+    background:#FFFBEB !important; font-weight:650 !important;
+  }
+  .demo-nav:hover{background:#FEF3C7 !important;}
+  .demo-nav[hidden]{display:none;}
+  .demo-locked-notice{margin:12px 0;padding:12px 14px;border:1px dashed #D97706;border-radius:10px;background:#FFFBEB;color:#92400E;font-size:12px;line-height:1.6;}
+  .demo-locked-notice strong{display:block;font-size:12.5px;margin-bottom:4px;}
+  .demo-locked-notice p{margin:0;}
+  .demo-locked-notice[hidden]{display:none;}
+  /* AI chat */
+  .chat-workspace{display:grid;grid-template-columns:minmax(0,1.7fr) minmax(0,1fr);gap:14px;align-items:start;}
+  .chat-main{overflow:hidden;display:flex;flex-direction:column;min-width:0;}
+  .chat-header{display:flex;align-items:center;gap:10px;padding:14px 16px;border-bottom:1px solid var(--line2);background:linear-gradient(180deg,#F3F8F6,#FFFFFF);}
+  .chat-header-avatar{width:34px;height:34px;border-radius:10px;display:grid;place-items:center;font-size:12px;font-weight:800;color:#fff;background:linear-gradient(135deg,#0B4F49,#17795E);flex-shrink:0;}
+  .chat-header-copy{display:flex;flex-direction:column;gap:2px;min-width:0;}
+  .chat-header-copy strong{font-size:13px;}
+  .chat-header-copy span{font-size:11px;color:var(--muted);display:flex;align-items:center;gap:6px;}
+  .chat-online-dot{width:7px;height:7px;border-radius:50%;background:var(--pos);display:inline-block;box-shadow:0 0 0 3px var(--posbg);}
+  .chat-log{display:flex;flex-direction:column;gap:12px;min-height:340px;max-height:560px;overflow:auto;padding:18px 16px;background:var(--sunken);background-image:radial-gradient(circle at 1px 1px,rgba(82,101,129,.08) 1px,transparent 0);background-size:22px 22px;}
+  .chat-msg{display:flex;gap:10px;align-items:flex-end;max-width:82%;}
+  .chat-msg .chat-avatar{width:30px;height:30px;border-radius:50%;display:grid;place-items:center;font-size:10px;font-weight:800;flex-shrink:0;background:#fff;border:1px solid var(--line);color:var(--muted);}
+  .chat-msg.is-user{align-self:flex-end;flex-direction:row-reverse;}
+  .chat-msg.is-assistant{align-self:flex-start;}
+  .chat-msg.is-user .chat-avatar{background:#0B4F49;color:#fff;border-color:#0B4F49;}
+  .chat-bubble{background:#fff;border:1px solid var(--line);border-radius:14px;border-bottom-left-radius:4px;padding:12px 14px;font-size:13.5px;line-height:1.65;box-shadow:var(--shadow-sm);min-width:0;overflow-wrap:anywhere;}
+  .chat-msg.is-user .chat-bubble{background:#0B4F49;color:#fff;border-color:#0B4F49;border-radius:14px;border-bottom-right-radius:4px;}
+  .chat-bubble p{margin:6px 0;}
+  .chat-bubble p:first-child{margin-top:0;}
+  .chat-bubble p:last-child{margin-bottom:0;}
+  .chat-meta{font-size:10px;color:var(--faint);margin-top:6px;}
+  .chat-msg.is-user .chat-meta{color:rgba(255,255,255,.7);text-align:right;}
+  .chat-bullet{margin:4px 0;}
+  .chat-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px;}
+  .chat-composer{padding:14px 16px 12px;border-top:1px solid var(--line2);background:var(--surface);}
+  .chat-input-row{display:flex;gap:8px;}
+  .chat-input-row .inp{flex:1;height:42px;border-radius:12px;font-size:13px;}
+  .chat-input-row .btn{height:42px;border-radius:12px;padding:0 18px;}
+  .chat-status{margin:8px 2px 0;font-size:11px;min-height:16px;}
+  .chat-suggests{display:flex;gap:8px;flex-wrap:wrap;align-items:center;padding:12px 16px;border-top:1px solid var(--line2);background:var(--surface);}
+  .chat-suggests-label{font-size:10px;text-transform:uppercase;letter-spacing:.08em;color:var(--faint);font-weight:700;margin-right:2px;}
+  .chat-pill{border-radius:999px !important;height:30px !important;font-size:11.5px !important;border:1px solid var(--line) !important;background:var(--sunken) !important;}
+  .chat-pill:hover{background:#fff !important;border-color:#BCC9D9 !important;color:var(--ink) !important;}
+  .chat-typing{display:inline-flex;gap:4px;align-items:center;padding:4px 0;}
+  .chat-typing i{width:7px;height:7px;border-radius:50%;background:var(--muted);animation:chatBlink 1.1s infinite;}
+  .chat-typing i:nth-child(2){animation-delay:.18s;}
+  .chat-typing i:nth-child(3){animation-delay:.36s;}
+  @keyframes chatBlink{0%,80%,100%{opacity:.25;transform:translateY(0);}40%{opacity:1;transform:translateY(-3px);}}
+  @media (max-width:900px){.chat-workspace{grid-template-columns:minmax(0,1fr);}.chat-msg{max-width:92%;}.chat-log{min-height:300px;}}
+  .explain-box{background:var(--sunken);border:1px solid var(--line);border-radius:12px;padding:12px 14px;margin-top:12px;font-size:13px;}
+  .explain-headline{font-weight:700;margin-bottom:6px;}
+  .paynow-result{background:var(--posbg);border:1px solid #bfe6d2;border-radius:10px;padding:10px 12px;margin-top:10px;font-size:13px;}
+  .webhook-card input[type=text]{width:100%;}
+</style>
+</head>
+<body class="dashboard">
+<header class="topbar">
+  <div class="wrap" style="display:flex;align-items:center;gap:12px;width:100%;">
+    <a class="brand" href="/"><img class="brand-mark" src="/logo.svg" width="30" height="30" alt="" /><span><span class="brand-name">Invoice Sync</span><br><span class="brand-sub">Drive ↔ PayPal reconciliation</span></span></a>
+    <span style="flex:1"></span>
+    <span class="user-pill"><span class="avatar" id="userAvatar">?</span><span class="small" id="who"></span></span>
+    <button class="btn" id="demoSwitchBtn" hidden title="Switch to the seeded demo workspace — no keys needed">✨ Try Demo mode</button>
+    <button class="btn btn-ghost" id="scanBtn">Scan now</button>
+    <button class="btn btn-quiet" id="logoutBtn">Log out</button>
+  </div>
+</header>
+
+<div class="dash">
+  <aside class="side">
+    <div class="lbl">Workspace</div>
+    <button class="nav-i on" data-tab="overview"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="2"/><rect x="14" y="3" width="7" height="7" rx="2"/><rect x="14" y="14" width="7" height="7" rx="2"/><rect x="3" y="14" width="7" height="7" rx="2"/></svg><span>Overview</span></button>
+    <button class="nav-i" data-tab="scans"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg><span>Scans</span></button>
+    <button class="nav-i" data-tab="invoices"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><path d="M16 13H8"/><path d="M16 17H8"/><path d="M10 9H8"/></svg><span>Invoices</span></button>
+    <button class="nav-i" data-tab="transactions"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="20" height="14" rx="2.5"/><path d="M2 10h20"/></svg><span>Transactions</span></button>
+    <button class="nav-i" data-tab="chat"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg><span>AI Chat</span></button>
+    <div class="lbl" style="margin-top:20px;">Connections</div>
+    <button class="nav-i" data-tab="drive"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20h16a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.9a2 2 0 0 1-1.66-.9l-.82-1.2A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13c0 1.1.9 2 2 2Z"/></svg><span>Google Drive</span></button>
+    <button class="nav-i" data-tab="paypal"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 7V5a2 2 0 0 0-2-2H5a2 2 0 0 0 0 4h14a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5"/><path d="M16 12h.01"/></svg><span>PayPal</span></button>
+    <button class="nav-i" data-tab="razorpay" hidden><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="20" height="14" rx="2.5"/><path d="M2 10h20"/><path d="m11 13-2 3h6"/></svg><span>Razorpay</span></button>
+    <button class="nav-i" data-tab="sync"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-2.64-6.36L21 8"/><path d="M21 3v5h-5"/></svg><span>Recurring sync</span></button>
+    <button class="nav-i demo-nav" id="demoSideBtn" hidden title="Switch to the seeded demo workspace"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l1.9 5.8L19.7 10l-5.8 1.9L12 17.7l-1.9-5.8L4.3 10l5.8-1.2z"/><path d="M19 15l.9 2.6L22.5 18.5l-2.6.9L19 22l-.9-2.6-2.6-.9 2.6-.9z"/></svg><span>✨ Try Demo mode</span></button>
+  </aside>
+
+  <main class="main">
+    <div class="page-head">
+      <div><h1 id="pageTitle">Overview</h1><p id="pageSub">Match status across Drive invoices and PayPal.</p></div>
+      <span style="flex:1"></span>
+      <span id="runBadge"></span>
+    </div>
+    <div id="demoBanner" hidden></div>
+
+    <!-- OVERVIEW -->
+    <section id="tab-overview">
+      <div class="overview-hero">
+        <div class="overview-hero-copy"><span class="overview-eyebrow">Reconciliation workspace</span><h2>All your collectibles data in one place</h2><p id="overviewHeadline">See what’s matched, what needs a closer look, and what’s next.</p><div class="overview-hero-actions"><button class="btn btn-primary" id="overviewReview">Review invoices <span aria-hidden="true">↗</span></button><button class="btn btn-ghost" id="overviewScan">Run a scan</button></div></div>
+        <div class="overview-completion"><div class="overview-ring" id="overviewRing"><strong id="overviewRate">—</strong><span>matched</span></div><div><strong id="overviewProgressTitle">Ready when you are</strong><p id="overviewProgressSub">Connect your accounts to get started.</p></div></div>
+      </div>
+      <div class="grid-4" id="statCards"></div>
+      <div class="overview-columns">
+        <div class="card card-pad overview-attention">
+          <div class="overview-card-head"><div><h2 class="h2">Needs a closer look</h2><p class="small muted">Your next steps, in one place.</p></div><span class="chip chip-neutral" id="overviewAttentionCount">—</span></div>
+          <div id="overviewAttention"></div>
+          <button class="btn btn-quiet overview-view-all" id="overviewAllInvoices">View all invoices <span aria-hidden="true">→</span></button>
+        </div>
+        <div class="card card-pad">
+          <div class="overview-card-head"><div><h2 class="h2">Invoice value</h2><p class="small muted">Extracted totals, kept separate by currency.</p></div></div>
+          <div id="overviewCurrencyTotals"></div>
+          <p class="overview-footnote">Totals use invoice amounts. Remaining value includes invoices awaiting a match.</p>
+        </div>
+      </div>
+      <div class="overview-columns overview-secondary">
+        <div class="card card-pad"><div class="overview-card-head"><div><h2 class="h2">Recent activity</h2><p class="small muted">A quick look at your latest scans.</p></div><button class="btn btn-quiet" id="overviewAllScans">All scans →</button></div><div id="scans"></div></div>
+        <div class="card card-pad"><div class="overview-card-head"><div><h2 class="h2">Workspace pulse</h2><p class="small muted">Matching progress and scan readiness.</p></div></div>
+          <div class="overview-breakdown"><div class="overview-section-label"><span>Match breakdown</span><span id="matchBarsub">—</span></div><div id="matchBars"><div id="barM"></div><div id="barR"></div><div id="barU"></div></div><div id="matchLegend" class="small muted"></div></div>
+          <div id="overviewPulse"></div><button class="btn btn-quiet overview-view-all" id="overviewSchedule">Manage recurring sync →</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- SCANS (live progress + history) -->
+    <section id="tab-scans" class="scans-workspace" hidden>
+      <div class="scans-top-layout">
+      <div class="card card-pad scans-current" id="scanCurrentCard">
+        <div class="overview-card-head"><span class="overview-eyebrow">Scan status</span><span class="scans-live-label"><span aria-hidden="true"></span>Updates every 3s</span></div>
+        <div id="scanCurrent"><div class="overview-empty">Loading scan status…</div></div>
+        <div class="scans-current-actions">
+          <button class="btn btn-primary" id="scanNowBtn2">Scan now</button>
+          <button class="btn btn-danger" id="scanCancelBtn" hidden>Cancel scan</button>
+          <button class="btn btn-quiet" id="scansViewInvoices">Review invoices →</button>
+        </div>
+      </div>
+      <aside class="card card-pad scans-guide"><span class="overview-eyebrow">Behind each scan</span><h2 class="h2">From folder to match.</h2><ol><li><span>01</span><div><strong>Find invoices</strong><p>PDFs and images, including subfolders.</p></div></li><li><span>02</span><div><strong>Read the details</strong><p>Extract amounts, vendors, and dates.</p></div></li><li><span>03</span><div><strong>Sync &amp; match</strong><p>Compare against your connected payments.</p></div></li></ol><div class="scans-guide-note">You can cancel a running scan. Invoices already extracted are kept.</div><button class="btn btn-quiet" id="scansManageSync">Manage recurring sync →</button></aside>
+      </div>
+      <div class="card card-pad scans-history-card">
+        <div class="overview-card-head"><div><h2 class="h2">Scan activity</h2><p class="small muted">Results and details from your latest 20 runs.</p></div><div class="scans-history-controls"><select class="sel" id="scanHistoryFilter" aria-label="Filter scan activity"><option value="">All runs</option><option value="success">Successful</option><option value="running">Running</option><option value="failed">Failed</option><option value="cancelled">Cancelled</option></select><button class="btn btn-ghost" id="scansReload">Refresh</button></div></div>
+        <div id="scanHistoryStats" class="scans-history-stats"></div>
+        <div id="scanHistory"></div>
+        </div>
+    </section>
+
+    <!-- INVOICES -->
+    <section id="tab-invoices" class="collection-workspace" hidden>
+      <div class="workspace-banner"><div><span class="overview-eyebrow">Invoice library</span><h2>Every document. Every decision.</h2><p>Review the original, check the signals, and connect the right payment.</p></div><button class="btn btn-ghost" data-go-tab="drive">Manage folders ↗</button></div>
+      <div class="workspace-summary" id="invOverviewStats"></div>
+      <div class="card collection-card"><div class="collection-toolbar"><div><h2 class="h2">Your invoices</h2><span class="small muted" id="invListCount">Loading invoices…</span></div><div class="collection-filters"><select class="sel" id="invFilter" aria-label="Filter invoices by extraction status"><option value="">All statuses</option><option value="extracted">Extracted</option><option value="pending">Pending</option><option value="failed">Failed</option></select><select class="sel" id="invMatchFilter" aria-label="Filter invoices by match status"><option value="">All matches</option><option value="matched">Matched</option><option value="needs_review">Needs review</option><option value="unmatched">Unmatched</option></select><button class="btn btn-ghost" id="invReload">Refresh</button></div></div>
+      <div class="table-wrap collection-table-wrap"><table class="tbl invoice-library-table"><thead><tr><th>Invoice</th><th>Amount / date</th><th>Match</th><th>Linked payment</th><th>Actions</th></tr></thead><tbody id="invRows"></tbody></table><div class="collection-empty" id="invEmpty" hidden><strong>Your invoice library starts here</strong><p>Choose your Drive folders and run a scan to bring in your documents.</p><button class="btn btn-ghost" data-go-tab="drive">Choose folders →</button></div></div></div>
+    </section>
+
+    <!-- TRANSACTIONS -->
+    <section id="tab-transactions" class="collection-workspace" hidden>
+      <div class="workspace-banner"><div><span class="overview-eyebrow">Payment library</span><h2>The other half of the picture.</h2><p>Synced payments from your connected accounts, ready to match.</p></div><button class="btn btn-ghost" data-go-tab="scans">Sync with a scan ↗</button></div>
+      <div class="workspace-summary" id="txnOverviewStats"></div>
+      <div class="card collection-card"><div class="collection-toolbar"><div><h2 class="h2">Your payments</h2><span class="small muted" id="txnCount">Loading payments…</span></div><div class="collection-filters"><button class="btn btn-quiet" id="txnTest">Test PayPal connection</button><button class="btn btn-ghost" id="txnReload">Refresh</button></div></div>
+      <div class="transaction-filters"><label class="transaction-search"><span class="lbl-field">Search payments</span><input class="inp" id="txnSearch" type="search" placeholder="Transaction ID, payer, email or description" /></label><label><span class="lbl-field">Provider</span><select class="sel" id="txnProviderFilter"><option value="">All providers</option><option value="PayPal">PayPal</option><option value="Razorpay">Razorpay</option></select></label><label><span class="lbl-field">Status</span><select class="sel" id="txnStatusFilter"><option value="">All statuses</option></select></label><label><span class="lbl-field">Currency</span><select class="sel" id="txnCurrencyFilter"><option value="">All currencies</option></select></label><label><span class="lbl-field">From</span><input class="inp" id="txnDateFrom" type="date" /></label><label><span class="lbl-field">To</span><input class="inp" id="txnDateTo" type="date" /></label><button class="btn btn-quiet" id="txnClearFilters">Clear filters</button></div><div class="small collection-feedback" id="txnLoadStatus" aria-live="polite"></div><div class="small collection-feedback" id="txnTestStatus" aria-live="polite"></div>
+      <div class="table-wrap collection-table-wrap"><table class="tbl payment-library-table"><thead><tr><th>Transaction</th><th>Provider</th><th data-txn-column="amount" aria-sort="none"><button class="table-sort" data-txn-sort="amount">Amount <span aria-hidden="true">↕</span></button></th><th data-txn-column="payer" aria-sort="none"><button class="table-sort" data-txn-sort="payer">Payer <span aria-hidden="true">↕</span></button></th><th data-txn-column="date" aria-sort="descending"><button class="table-sort" data-txn-sort="date">Date <span aria-hidden="true">↓</span></button></th><th data-txn-column="status" aria-sort="none"><button class="table-sort" data-txn-sort="status">Status <span aria-hidden="true">↕</span></button></th></tr></thead><tbody id="txnRows"></tbody></table><div class="collection-empty" id="txnEmpty" hidden><strong>No payments synced yet</strong><p>Connect a payment account, then run a scan to fill your library.</p><button class="btn btn-ghost" data-go-tab="paypal">Connect PayPal →</button></div></div><div class="transaction-pagination"><span id="txnPageInfo" class="small muted"></span><div><button class="btn btn-ghost" id="txnPrevPage">Previous</button><button class="btn btn-ghost" id="txnNextPage">Next</button></div></div></div>
+    </section>
+
+    <!-- AI CHAT (agentic: tool-calls invoices/matches/payments) -->
+    <section id="tab-chat" class="collection-workspace" hidden>
+      <div class="workspace-banner"><div><span class="overview-eyebrow">Agentic assistant</span><h2>Ask about invoices. Act on payments.</h2><p>Grounded in your data via tool-calls — then Pay Now on unmatched rows.</p></div><span class="workspace-brand-mark provider-chat" aria-hidden="true">AI</span></div>
+      <div class="chat-workspace">
+        <div class="card chat-main">
+          <div class="chat-header"><span class="chat-header-avatar" aria-hidden="true">AI</span><div class="chat-header-copy"><strong>Invoice assistant</strong><span><i class="chat-online-dot" aria-hidden="true"></i>Grounded in your workspace · replies with Pay actions</span></div><span style="flex:1"></span><button class="btn btn-ghost" id="chatNewBtn" type="button">+ New chat</button></div>
+          <div class="chat-log" id="chatMessages" aria-live="polite"></div>
+          <div class="chat-suggests" aria-label="Suggested questions"><span class="chat-suggests-label">Try asking</span><button class="btn btn-quiet chat-pill" data-chat-suggest="Which Acme invoices are overdue?">Overdue Acme invoices</button><button class="btn btn-quiet chat-pill" data-chat-suggest="Show unmatched invoices">Show unmatched</button><button class="btn btn-quiet chat-pill" data-chat-suggest="Which invoices need review and why?">Needs review + why</button><button class="btn btn-quiet chat-pill" data-chat-suggest="Flag duplicates, overpayments and currency conflicts">Flag issues</button></div>
+          <div class="chat-composer"><div class="chat-input-row"><input class="inp" id="chatInput" placeholder="Ask about amounts, vendors, due dates, matches…" maxlength="2000" autocomplete="off" /><button class="btn btn-primary" id="chatSend">Send <span aria-hidden="true">↵</span></button></div><p class="small muted chat-status" id="chatStatus" aria-live="polite"></p></div>
+        </div>
+        <aside class="card card-pad chat-guide"><span class="overview-eyebrow">Make it useful</span><h2 class="h2">Ask like you’d ask a teammate.</h2><ul class="integration-checklist"><li>“Which Acme invoices are overdue?”</li><li>“Show unmatched invoices over $500”</li><li>“Why does this invoice need review?”</li></ul><div class="guide-tip">Answers cite your invoices and payments. Unmatched results include <strong>Pay Now</strong> — PayPal order or payout, right from the chat.</div><div class="guide-tip">Tip: press <code>Enter</code> to send, start a <strong>New chat</strong> for a fresh topic.</div></aside>
+      </div>
+    </section>
+
+    <!-- GOOGLE DRIVE -->
+    <section id="tab-drive" class="integration-workspace" hidden>
+      <div class="workspace-banner"><div><span class="overview-eyebrow">Document source</span><h2>Good matches start with your invoices.</h2><p>Choose where we look. We’ll include the subfolders, too.</p></div><span class="workspace-brand-mark provider-drive" aria-hidden="true">GD</span></div>
+      <div class="drive-workspace-layout">
+        <div class="drive-settings-column">
+          <div class="card card-pad integration-main"><div class="integration-heading"><div class="integration-identity"><span class="integration-icon provider-drive" aria-hidden="true">GD</span><div><h2 class="h2">Google Drive</h2><span class="small muted">Your invoice source</span></div></div><span id="driveActiveBadge" class="chip chip-neutral">Checking…</span></div><p class="integration-status" id="driveStatus">Loading connection…</p><div class="demo-locked-notice" id="driveDemoNotice" hidden><strong>Not available in Demo mode</strong><p>Demo uses seeded invoices — connecting Google Drive is disabled here. Use a real account to connect your own folders.</p></div><div class="integration-actions"><button class="btn btn-primary" id="driveConnect">Connect Google Drive</button><button class="btn btn-quiet" id="driveDisconnect" hidden>Disconnect</button></div></div>
+          <div id="folderPicker" hidden><div class="card card-pad folder-picker-card"><div class="overview-card-head"><div><h2 class="h2">Where should we look?</h2><p class="small muted">Expand a folder to browse, then select the sources you want to scan.</p></div><button class="btn btn-quiet" id="refreshFolders">Refresh</button></div><div id="selectedFolders" class="selected-folders" aria-live="polite"></div><div id="folderTree" class="folder-tree" aria-label="Drive folders"></div><div class="folder-picker-footer"><div class="integration-actions"><button class="btn btn-primary" id="saveFolder">Save selected folders</button></div><p class="small muted" id="folderSaveStatus" aria-live="polite"></p></div><p class="small muted" id="driveFilesStatus" aria-live="polite"></p></div></div>
+          <aside class="card card-pad integration-guide"><span class="overview-eyebrow">What we read</span><div class="format-tags"><span>PDF</span><span>PNG</span><span>JPEG</span><span>Other images</span></div><p>PDF extraction reads the first page. Selected folders include all their subfolders, and overlapping selections are deduplicated.</p></aside>
+        </div>
+        <div class="card card-pad drive-browser-panel"><div class="overview-card-head"><div><span class="overview-eyebrow">File browser</span><h2 class="h2">Your invoice files</h2><p class="small muted" id="driveBrowserStatus" aria-live="polite">Connect Drive and save folders to browse their files.</p></div><button class="btn btn-ghost" id="driveFiles" disabled>Refresh files</button></div><div id="driveFilesGrid" class="file-grid"><div class="collection-empty"><strong>Your files will appear here</strong><p>Connect Google Drive and save your folder selections on the left.</p></div></div></div>
+      </div>
+    </section>
+
+    <!-- PAYPAL -->
+    <section id="tab-paypal" class="integration-workspace" hidden>
+      <div class="workspace-banner"><div><span class="overview-eyebrow">Payment connection</span><h2>Bring your PayPal payments into view.</h2><p>Connect an account to turn invoice details into payment matches.</p></div><span class="workspace-brand-mark provider-paypal" aria-hidden="true">PP</span></div>
+      <div class="integration-layout"><div class="card card-pad integration-main"><div class="integration-heading"><div class="integration-identity"><span class="integration-icon provider-paypal" aria-hidden="true">PP</span><div><h2 class="h2">PayPal</h2><span class="small muted">Sandbox payment account</span></div></div><span id="ppActiveBadge"></span><button class="btn btn-quiet" id="ppDisconnect" hidden>Disconnect</button></div><p class="integration-status" id="ppStatus">Checking connection…</p>
+        <div class="demo-locked-notice" id="paypalDemoNotice" hidden><strong>Not available in Demo mode</strong><p>Demo uses simulated payments — connecting PayPal is disabled here. Use a real account to connect your own PayPal.</p></div>
+        <div id="ppConnectBlock"><div class="connection-option"><div class="connection-option-heading"><span class="connection-step">01</span><div><h3>Connect with PayPal</h3><p>Link your PayPal identity using account login.</p></div></div><a class="btn btn-primary" id="ppConnect" href="/api/auth/paypal/url">Connect with PayPal ↗</a><details class="connection-help"><summary>Login setup requirements</summary><p>Your PayPal app needs a registered Return URL. If PayPal reports a redirect_uri error, use client credentials below.</p></details></div>
+        <div class="connection-option"><div class="connection-option-heading"><span class="connection-step">02</span><div><h3>Use your app credentials</h3><p>Connect directly with your Client ID and secret.</p></div></div><div id="ppCreds"><div class="field"><label class="lbl-field" for="ppId">Client ID</label><input class="inp" id="ppId" placeholder="Your PayPal Client ID" autocomplete="off" /></div><div class="field"><label class="lbl-field" for="ppSecret">Client secret</label><input class="inp" id="ppSecret" type="password" placeholder="Your PayPal client secret" autocomplete="off" /></div><div class="integration-actions"><button class="btn btn-primary" id="savePp">Save &amp; test</button><span class="small muted" id="ppSaveStatus" aria-live="polite"></span></div></div></div></div>
+        <div id="ppConnectedBlock" hidden><div class="connection-success"><span aria-hidden="true">✓</span><div><strong>You’re connected.</strong><p id="ppConnectedDetail">Your payments are ready to sync.</p></div></div><div class="integration-actions"><button class="btn btn-ghost" data-go-tab="scans">Run a scan →</button><button class="btn btn-quiet" data-go-tab="transactions">View payments</button></div><p class="integration-note">To switch accounts, disconnect and reconnect with a different login or app.</p></div></div>
+      <aside class="card card-pad integration-guide"><span class="overview-eyebrow">Ready to reconcile</span><h2 class="h2">Connect. Sync. Match.</h2><ul class="integration-checklist"><li>Link your PayPal account or app.</li><li>Run a scan to sync payments.</li><li>Review suggested invoice matches.</li></ul><div class="guide-tip">Client credentials come from your PayPal developer app and work without login Return URL setup.</div><div class="integration-lookback"><span>Sync window</span><strong id="ppLookback">Checking…</strong></div></aside></div>
+    </section>
+
+    <!-- RAZORPAY -->
+    <section id="tab-razorpay" class="integration-workspace" hidden>
+      <div class="workspace-banner"><div><span class="overview-eyebrow">Payment connection</span><h2>One place for your Razorpay payments.</h2><p>Sync your account and review matches alongside your other payments.</p></div><span class="workspace-brand-mark provider-razorpay" aria-hidden="true">RZ</span></div>
+      <div class="integration-layout"><div class="card card-pad integration-main"><div class="integration-heading"><div class="integration-identity"><span class="integration-icon provider-razorpay" aria-hidden="true">RZ</span><div><h2 class="h2">Razorpay</h2><span class="small muted">Payment account</span></div></div><span id="rzActiveBadge"></span><button class="btn btn-quiet" id="rzDisconnect" hidden>Disconnect</button></div><p class="integration-status" id="rzStatus">Checking connection…</p>
+        <div id="rzConnectBlock"><div class="connection-option"><div class="connection-option-heading"><span class="connection-step">01</span><div><h3>Connect with API keys</h3><p>Use the Key ID and secret from your Razorpay account.</p></div></div><div id="rzCreds"><div class="field"><label class="lbl-field" for="rzId">Key ID</label><input class="inp" id="rzId" placeholder="rzp_test_… or rzp_live_…" autocomplete="off" /></div><div class="field"><label class="lbl-field" for="rzSecret">Key secret</label><input class="inp" id="rzSecret" type="password" placeholder="Your Razorpay key secret" autocomplete="off" /></div><div class="integration-actions"><button class="btn btn-primary" id="saveRz">Save &amp; test</button><span class="small muted" id="rzSaveStatus" aria-live="polite"></span></div></div></div></div>
+        <div id="rzConnectedBlock" hidden><div class="connection-success"><span aria-hidden="true">✓</span><div><strong>You’re connected.</strong><p id="rzConnectedDetail">Your payments are ready to sync.</p></div></div><div class="integration-actions"><button class="btn btn-ghost" data-go-tab="scans">Run a scan →</button><button class="btn btn-quiet" data-go-tab="transactions">View payments</button></div><p class="integration-note">To switch accounts, disconnect and reconnect with a different set of keys.</p></div></div>
+      <aside class="card card-pad integration-guide"><span class="overview-eyebrow">Getting your keys</span><h2 class="h2">A quick connection.</h2><ul class="integration-checklist"><li>Open your Razorpay Dashboard.</li><li>Go to Settings → API Keys.</li><li>Copy your Key ID and secret here.</li></ul><div class="guide-tip">Keys beginning with <code>rzp_test_</code> use the test environment. Choose keys for the account you want to sync.</div><div class="integration-lookback"><span>Sync window</span><strong id="rzLookback">Checking…</strong></div></aside></div>
+    </section>
+
+    <!-- RECURRING SYNC -->
+    <section id="tab-sync" class="integration-workspace" hidden>
+      <div class="workspace-banner"><div><span class="overview-eyebrow">Recurring sync</span><h2>A little less manual work.</h2><p>Keep invoices and payments in sync on a schedule that suits you.</p></div><span class="workspace-brand-mark provider-sync" aria-hidden="true">↻</span></div>
+      <div class="integration-layout"><div class="card card-pad integration-main"><div class="overview-card-head"><div><h2 class="h2">Your scan schedule</h2><p class="small muted">Find new invoices, sync payments, and update matches.</p></div><span class="chip chip-neutral" id="syncState">Checking…</span></div><label class="lbl-field" for="cadence">Scan frequency</label><div class="schedule-controls"><select class="sel" id="cadence"></select><button class="btn btn-primary" id="saveCadence">Save schedule</button></div><p class="small muted" id="cadenceInfo" aria-live="polite">Loading schedule…</p><div class="schedule-summary"><div><span>Current schedule</span><strong id="syncFrequency">—</strong></div><div><span>Next scan</span><strong id="syncNextRun">—</strong></div><div><span>Last scheduled scan</span><strong id="syncLastRun">—</strong></div></div><div class="integration-actions"><button class="btn btn-ghost" data-go-tab="scans">View scan activity →</button></div></div>
+      <aside class="card card-pad integration-guide"><span class="overview-eyebrow">On your terms</span><h2 class="h2">Set it once. Check in anytime.</h2><ul class="integration-checklist"><li>Scans use your selected Drive folders.</li><li>New invoices are extracted and matched.</li><li>Review results on Overview or Scans.</li></ul><div class="guide-tip">Choose “None” to turn off recurring scans. You can still run a scan manually whenever you need one.</div></aside></div>
+      <div class="card card-pad webhook-card" style="margin-top:14px;"><div class="overview-card-head"><div><h2 class="h2">Zapier webhook</h2><p class="small muted">POST scan-complete results to any URL (Zapier Catch Hook, Make, n8n).</p></div><span class="chip chip-neutral" id="webhookBadge">Checking…</span></div><label class="lbl-field" for="webhookUrl">Webhook URL</label><input class="inp" id="webhookUrl" type="text" placeholder="https://hooks.zapier.com/hooks/catch/…" autocomplete="off" /><label class="small" style="display:flex;gap:8px;align-items:center;margin-top:10px;"><input type="checkbox" id="webhookEnabled" checked /> Fire on every scan-complete</label><div class="integration-actions" style="margin-top:10px;"><button class="btn btn-primary" id="webhookSave">Save webhook</button><button class="btn btn-ghost" id="webhookTest">Send test event</button></div><p class="small muted" id="webhookStatus" aria-live="polite">Loading…</p></div>
+    </section>
+  </main>
+</div>
+
+<!-- Invoice detail modal: original file + extracted data -->
+<div class="modal-backdrop" id="invoiceModal" hidden>
+  <div class="modal modal-xl" role="dialog" aria-modal="true" aria-label="Invoice detail">
+    <div class="modal-head">
+      <div><h2 class="h2" id="invModalTitle">Invoice</h2><p class="small muted" id="invModalSub" style="margin:4px 0 0;"></p></div>
+      <span style="flex:1"></span>
+      <a class="btn btn-quiet" id="invOpenOriginal" target="_blank" rel="noopener">Open original ↗</a>
+      <button class="btn btn-quiet" id="invModalClose">Close ✕</button>
+    </div>
+    <div class="tabs" role="tablist">
+      <button class="tab-btn on" id="invTabOriginal" role="tab">Original file</button>
+      <button class="tab-btn" id="invTabExtracted" role="tab">Extracted data</button>
+    </div>
+    <div class="invoice-review-layout">
+    <div class="invoice-document">
+    <div class="modal-body" id="invModalOriginal">
+      <div class="viewer-toolbar" id="invImgToolbar" hidden>
+        <button class="btn btn-ghost" id="invZoomOut">−</button>
+        <span class="small muted tnum" id="invZoomLabel">100%</span>
+        <button class="btn btn-ghost" id="invZoomIn">+</button>
+        <button class="btn btn-quiet" id="invZoomReset">Reset</button>
+        <span style="flex:1"></span>
+        <a class="btn btn-quiet" id="invOpenDrive" href="#" target="_blank" rel="noopener">Open in Drive ↗</a>
+      </div>
+      <div class="viewer-stage" id="invOriginalStage"><div class="empty">Loading original file…</div></div>
+    </div>
+    <div class="modal-body" id="invModalExtracted" hidden>
+      <div id="invExtractedBody"></div>
+    </div>
+    </div>
+    <aside class="match-review-panel" aria-label="Payment matching">
+      <div class="match-review-heading"><h3 class="h2">Match a payment</h3><span class="match-help" tabindex="0" aria-label="Strength reflects matching signals, not a probability." title="Strength reflects matching signals, not a probability.">?</span></div>
+      <p class="match-review-intro small muted">Review the match or choose another payment.</p>
+      <div id="invMatchSummary" aria-live="polite"></div>
+      <div class="explain-box" id="invExplanation" aria-live="polite"></div>
+      <div class="match-review-actions">
+        <button class="btn btn-quiet" id="invUnmatch">Unmatch</button>
+        <button class="btn btn-ghost" id="invAutoMatch">Auto-match</button>
+        <button class="btn btn-primary" id="invPayNow">Pay Now</button>
+      </div>
+      <div class="small muted" id="payNowStatus" aria-live="polite"></div>
+      <div class="match-search-heading"><label class="lbl-field" for="invCandidateSearch">Find a payment</label><button class="btn btn-quiet" id="invSyncPayments">Check for new payments</button></div>
+      <div class="match-search-row"><input class="inp" id="invCandidateSearch" placeholder="ID, invoice, email or amount" /><button class="btn btn-ghost" id="invSearchPayments">Search</button></div>
+      <p class="small muted" id="invCandidateStatus" aria-live="polite"></p>
+      <div id="invCandidates"></div>
+    </aside>
+    </div>
+  </div>
+</div>
+
+<!-- Drive file viewer modal -->
+<div class="modal-backdrop modal-above" id="driveModal" hidden>
+  <div class="modal modal-xl" role="dialog" aria-modal="true" aria-label="Drive file preview">
+    <div class="modal-head">
+      <div><h2 class="h2" id="driveModalTitle">File preview</h2><p class="small muted" id="driveModalSub" style="margin:4px 0 0;"></p></div>
+      <span style="flex:1"></span>
+      <button class="btn btn-quiet" id="driveModalClose">Close ✕</button>
+    </div>
+    <div class="viewer-toolbar" id="driveImgToolbar" hidden>
+      <button class="btn btn-ghost" id="driveZoomOut">−</button>
+      <span class="small muted tnum" id="driveZoomLabel">100%</span>
+      <button class="btn btn-ghost" id="driveZoomIn">+</button>
+      <button class="btn btn-quiet" id="driveZoomReset">Reset</button>
+    </div>
+    <div class="modal-body"><div class="viewer-stage" id="driveModalStage"><div class="empty">Loading…</div></div></div>
+  </div>
+</div>
+
+<!-- Stored transaction details -->
+<div class="modal-backdrop" id="transactionDetailModal" hidden><div class="modal modal-lg" role="dialog" aria-modal="true" aria-labelledby="transactionDetailTitle"><div class="modal-head"><div><span class="overview-eyebrow">Payment details</span><h2 class="h2" id="transactionDetailTitle">Transaction</h2><p class="small muted" id="transactionDetailSub"></p></div><span style="flex:1"></span><button class="btn btn-quiet" id="transactionDetailClose">Close ✕</button></div><div class="modal-body" id="transactionDetailBody"></div></div></div>
+
+<!-- PayPal test result dialog -->
+<div class="modal-backdrop" id="txnDialog" hidden>
+  <div class="modal" role="dialog" aria-modal="true" aria-label="PayPal connection test">
+    <div class="modal-head">
+      <div><h2 class="h2" id="txnDialogTitle">PayPal connection</h2></div>
+      <span style="flex:1"></span>
+      <button class="btn btn-quiet" id="txnDialogClose">Close ✕</button>
+    </div>
+    <div class="modal-body" id="txnDialogBody"></div>
+  </div>
+</div>
+
+<script type="module">
+import { loadFilePreview, clearFilePreview } from '/file-viewer.js';
+import { api, toast, esc, money, fmtDate, statusChip } from '/app.js';
+import { initChat, payNowForInvoice, loadExplanation, initWebhook, showDemoBanner } from '/assistant.js';
+
+let overview = null;
+let overviewRequestId = 0;
+let lastScanState = null;
+let razorpayEnabled = false;
+let isDemoMode = false;
+function setDemoMode(value) {
+  isDemoMode = !!value;
+  applyDemoLocks();
+}
+function applyDemoLocks() {
+  const driveNotice = document.getElementById('driveDemoNotice');
+  if (driveNotice) driveNotice.hidden = !isDemoMode;
+  const paypalNotice = document.getElementById('paypalDemoNotice');
+  if (paypalNotice) paypalNotice.hidden = !isDemoMode;
+  if (!isDemoMode) return;
+  const driveConnect = document.getElementById('driveConnect');
+  if (driveConnect) { driveConnect.disabled = true; driveConnect.title = 'Not available in Demo mode'; driveConnect.textContent = 'Connect Google Drive (disabled in Demo)'; }
+  const driveDisconnect = document.getElementById('driveDisconnect');
+  if (driveDisconnect) driveDisconnect.hidden = true;
+  const saveFolder = document.getElementById('saveFolder');
+  if (saveFolder) { saveFolder.disabled = true; saveFolder.title = 'Not available in Demo mode'; }
+  const refreshFolders = document.getElementById('refreshFolders');
+  if (refreshFolders) refreshFolders.disabled = true;
+  const ppConnect = document.getElementById('ppConnect');
+  if (ppConnect) { ppConnect.setAttribute('aria-disabled', 'true'); ppConnect.style.pointerEvents = 'none'; ppConnect.style.opacity = '.55'; ppConnect.title = 'Not available in Demo mode'; }
+  const savePp = document.getElementById('savePp');
+  if (savePp) { savePp.disabled = true; savePp.title = 'Not available in Demo mode'; }
+  const ppDisconnect = document.getElementById('ppDisconnect');
+  if (ppDisconnect) ppDisconnect.hidden = true;
+  const ppId = document.getElementById('ppId');
+  if (ppId) ppId.disabled = true;
+  const ppSecret = document.getElementById('ppSecret');
+  if (ppSecret) ppSecret.disabled = true;
+}
+const tabs = ['overview', 'scans', 'invoices', 'transactions', 'chat', 'drive', 'paypal', 'razorpay', 'sync'];
+function showTab(name) {
+  if (name === 'razorpay' && !razorpayEnabled) name = 'overview';
+  tabs.forEach(t => {
+    const panel = document.getElementById('tab-' + t);
+    if (panel) panel.hidden = t !== name;
+    document.querySelector(`[data-tab="${t}"]`)?.classList.toggle('on', t === name);
+  });
+  location.hash = name;
+  const titles = { drive: 'Google Drive', paypal: 'PayPal', razorpay: 'Razorpay', sync: 'Recurring sync', scans: 'Scans', invoices: 'Invoices', transactions: 'Transactions', chat: 'AI Chat' };
+  const subtitles = {
+    drive: 'Connect your account and choose invoice folders.',
+    paypal: 'Connect your PayPal account to sync transactions.',
+    razorpay: 'Connect your Razorpay account to sync payments.',
+    sync: 'Schedule background invoice scans and transaction matching.',
+    scans: 'Live progress for the running scan, plus history. Cancel any time.',
+    invoices: 'Invoices with match results. Open any row to see the original file and extracted data.',
+    transactions: 'Payments synced for this workspace.',
+    chat: 'Ask about invoices — grounded answers with Pay Now actions.',
+  };
+  document.getElementById('pageTitle').textContent = titles[name] || name[0].toUpperCase() + name.slice(1);
+  document.getElementById('pageSub').textContent = subtitles[name] || 'Match status across Drive invoices and payments.';
+  if (name === 'overview') refreshOverview();
+  if (name === 'scans') loadScans();
+  if (name === 'invoices') loadInvoices();
+  if (name === 'transactions') loadTxns();
+  if (name === 'drive') loadDrive();
+  if (name === 'paypal') loadPaypal();
+  if (name === 'razorpay') loadRazorpay();
+  if (name === 'sync') loadSync();
+}
+document.querySelectorAll('[data-tab]').forEach(b => b.addEventListener('click', () => showTab(b.dataset.tab)));
+document.querySelectorAll('[data-go-tab]').forEach(b => b.addEventListener('click', () => showTab(b.dataset.goTab)));
+
+function setScanButtons(running) {
+  for (const id of ['scanBtn', 'scanNowBtn2', 'overviewScan']) {
+    const btn = document.getElementById(id);
+    if (!btn) continue;
+    btn.disabled = running;
+    if (id === 'scanBtn') btn.innerHTML = running ? '<span class="spinner"></span> Scanning…' : 'Scan now';
+    if (id === 'scanNowBtn2') btn.innerHTML = running ? '<span class="spinner"></span> Scan running…' : 'Scan now';
+    if (id === 'overviewScan') btn.innerHTML = running ? '<span class="spinner"></span> Scanning…' : 'Run a scan';
+  }
+  const cancel = document.getElementById('scanCancelBtn');
+  if (cancel) cancel.hidden = !running;
+}
+
+async function switchToDemo(btn) {
+  if (!btn) return;
+  btn.disabled = true;
+  const original = btn.innerHTML;
+  btn.innerHTML = '<span class="spinner"></span> Preparing demo…';
+  try {
+    await api('/api/auth/demo', { method: 'POST', body: {} });
+    window.location.href = '/dashboard';
+  } catch (e) {
+    toast(e.message, true);
+    btn.disabled = false;
+    btn.innerHTML = original;
+  }
+}
+
+async function boot() {
+  let isDemo = false;
+  let demoEnabled = true;
+  try {
+    const me = await api('/api/auth/me');
+    const email = me.user.email || '';
+    isDemo = !!me.isDemo;
+    if (typeof me.demoEnabled === 'boolean') demoEnabled = me.demoEnabled;
+    document.getElementById('who').textContent = email + (isDemo ? ' · Demo' : '');
+    const avatar = document.getElementById('userAvatar');
+    if (avatar) avatar.textContent = (email[0] || '?').toUpperCase();
+    showDemoBanner(isDemo);
+    setDemoMode(isDemo);
+  } catch { window.location.href = '/login'; return; }
+  try {
+    const settings = await api('/api/auth/config');
+    razorpayEnabled = settings.razorpayEnabled === true;
+    document.querySelector('[data-tab="razorpay"]').hidden = !razorpayEnabled;
+    if (typeof settings.demoEnabled === 'boolean') demoEnabled = settings.demoEnabled;
+  } catch (e) { toast(e.message, true); }
+  // Persistent demo entry: show on every dashboard tab for real users only.
+  // Never shown while already in demo mode.
+  const showDemoSwitch = !isDemo && demoEnabled;
+  for (const id of ['demoSwitchBtn', 'demoSideBtn']) {
+    const el = document.getElementById(id);
+    if (el) {
+      el.hidden = !showDemoSwitch;
+      el.addEventListener('click', () => switchToDemo(el));
+    }
+  }
+  try { initChat({ api, toast }); } catch (e) { console.warn('chat init failed', e); }
+  try { initWebhook({ api, toast }); } catch {}
+  document.addEventListener('invoice:review', (e) => openInvoiceModal(e.detail));
+  document.addEventListener('invoice:paynow', (e) => payNowForInvoice(e.detail, { api, toast, refresh: async () => { await loadInvoices(); refreshOverview(); } }));
+  const payBtn = document.getElementById('invPayNow');
+  if (payBtn) payBtn.addEventListener('click', async () => {
+    if (!currentInvoiceId) return;
+    payBtn.disabled = true;
+    try { await payNowForInvoice(currentInvoiceId, { api, toast, refresh: async () => { await refreshInvoiceReview(currentInvoiceId); } }); }
+    catch {} finally { payBtn.disabled = false; }
+  });
+  await refreshOverview();
+  // Surface demo + webhook state from the overview payload as well.
+  try {
+    if (overview?.isDemo) { showDemoBanner(true); setDemoMode(true); }
+    if (overview?.webhook) { const wb = document.getElementById('webhookBadge'); if (wb) wb.textContent = overview.webhook.url ? (overview.webhook.enabled ? 'Active' : 'Paused') : 'Not set'; }
+  } catch {}
+  let initialTab = location.hash.slice(1);
+  if (initialTab === 'matches') initialTab = 'invoices'; // matches now live inside invoices
+  if (tabs.includes(initialTab)) showTab(initialTab);
+  setInterval(refreshScanStatus, 3000);
+}
+function stageLabel(s) {
+  const map = { starting: 'Starting', listing: 'Listing Drive files', extracting: 'Extracting invoices', 'syncing-paypal': 'Syncing PayPal', 'syncing-razorpay': 'Syncing Razorpay', matching: 'Matching', cancelling: 'Cancelling', done: 'Done', failed: 'Failed', cancelled: 'Cancelled' };
+  return map[s] || s || 'Working';
+}
+function scanCount(value) {
+  const count = Number(value ?? 0);
+  return Number.isFinite(count) ? Math.max(0, count) : 0;
+}
+function scanTime(value) {
+  if (!value || !Number.isFinite(new Date(value).getTime())) return '—';
+  return new Date(value).toLocaleString(undefined, { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' });
+}
+function scanDuration(s) {
+  if (!s.started_at || !s.finished_at) return '—';
+  const seconds = Math.max(0, Math.round((new Date(s.finished_at) - new Date(s.started_at)) / 1000));
+  if (!Number.isFinite(seconds)) return '—';
+  return seconds < 60 ? `${seconds}s` : `${Math.floor(seconds / 60)}m ${seconds % 60}s`;
+}
+function scanTriggerLabel(trigger) {
+  if (trigger === 'manual') return 'Manual scan';
+  if (String(trigger).startsWith('schedule:')) return 'Scheduled scan';
+  if (String(trigger).includes('rescan')) return 'Invoice re-scan';
+  return 'Scan';
+}
+function scanRowHtml(s) {
+  const total = scanCount(s.files_total ?? s.files_seen);
+  const done = scanCount(s.files_processed);
+  const pct = total > 0 ? Math.min(100, Math.round(done / total * 100)) : 0;
+  return `<article class="scan-history-row" data-scan-id="${esc(s.id)}">
+    <div class="scan-history-heading"><span class="scan-history-mark is-${esc(s.status)}" aria-hidden="true">${s.status === 'success' ? '✓' : s.status === 'failed' ? '!' : s.status === 'running' ? '↻' : '−'}</span><div class="scan-history-title"><strong>${scanTriggerLabel(s.trigger)}</strong><time>${esc(scanTime(s.started_at))}</time></div>${statusChip(s.status)}<span class="scan-history-duration tnum">${esc(scanDuration(s))}</span></div>
+    <div class="scan-history-metrics"><span><strong>${scanCount(s.files_new)}</strong> new</span><span><strong>${scanCount(s.files_rescanned)}</strong> re-scanned</span><span><strong>${scanCount(s.transactions_synced)}</strong> payments synced</span><span><strong>${scanCount(s.matches_created)}</strong> matches scored</span></div>
+    ${s.status === 'running' ? `<div class="scan-history-progress"><span>${esc(stageLabel(s.current_stage))} · ${done}/${total} files processed</span><div class="progress-track"><div class="progress-fill ${total ? '' : 'indeterminate'}" style="${total ? `width:${pct}%` : ''}"></div></div></div>` : ''}
+    <details class="scan-run-details"><summary>Run details${s.error ? ' · error recorded' : ''}</summary><div class="scan-run-detail-body"><dl><dt>Started</dt><dd>${esc(scanTime(s.started_at))}</dd><dt>Finished</dt><dd>${esc(scanTime(s.finished_at))}</dd><dt>Files processed</dt><dd>${done} / ${total}</dd><dt>Last stage</dt><dd>${esc(stageLabel(s.current_stage))}</dd></dl>${s.error ? `<p class="scan-error">${esc(s.error)}</p>` : ''}${s.status === 'cancelled' ? '<p class="small muted">Already-extracted invoices were kept.</p>' : ''}</div></details></article>`;
+}
+async function refreshScanStatus() {
+  try {
+    const s = await api('/api/dashboard/scan/status');
+    setScanButtons(!!s.running);
+    const badge = document.getElementById('runBadge');
+    if (s.running) {
+      const p = s.progress;
+      const label = p && p.total > 0 ? `Scan running… ${p.processed}/${p.total} · ${stageLabel(p.stage)}` : 'Scan running…';
+      badge.innerHTML = `<span class="chip chip-info"><span class="spinner"></span>&nbsp;${esc(label)}</span>`;
+    } else {
+      badge.innerHTML = s.latest ? statusChip(s.latest.status) : '';
+    }
+    // Live-update the Scans page without a full reload flicker
+    if (!document.getElementById('tab-scans').hidden) {
+      renderScanCurrent(s);
+      syncScanHistory(s);
+    }
+    const scanState = s.latest ? { id: s.latest.id, status: s.latest.status, running: !!s.running } : null;
+    const completed = scanState && !scanState.running && scanState.status !== 'running';
+    const changed = scanState && (!lastScanState || lastScanState.id !== scanState.id || lastScanState.status !== scanState.status || lastScanState.running !== scanState.running);
+    lastScanState = scanState;
+    if (completed && changed) {
+      refreshOverview();
+      if (!document.getElementById('tab-invoices').hidden) loadInvoices();
+      if (!document.getElementById('tab-scans').hidden) loadScans();
+    }
+  } catch {}
+}
+async function refreshOverview() {
+  const requestId = ++overviewRequestId;
+  try {
+    const data = await api('/api/dashboard/overview');
+    if (requestId !== overviewRequestId) return;
+    overview = data;
+    const { invoices, transactions, matches, recentScans } = overview;
+    const svg = (paths) => `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${paths}</svg>`;
+    const cards = [
+      { label: 'Drive invoices', value: invoices.total, sub: `${invoices.extracted} extracted`, tone: 'blue', icon: svg('<path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><path d="M16 13H8"/><path d="M16 17H8"/>') },
+      { label: 'Payments', value: transactions.total, sub: 'stored across connected accounts', tone: 'green', icon: svg('<rect x="2" y="5" width="20" height="14" rx="2.5"/><path d="M2 10h20"/>') },
+      { label: 'Matched', value: matches.matched, sub: `${matches.needs_review} need review`, tone: 'pos', icon: svg('<path d="M22 11.1V12a10 10 0 1 1-5.93-9.14"/><path d="m9 11 3 3L22 4"/>') },
+      { label: 'Unmatched', value: matches.unmatched, sub: 'need attention', tone: matches.unmatched > 0 ? 'amber' : 'neutral', icon: svg('<circle cx="12" cy="12" r="10"/><path d="M12 8v4"/><path d="M12 16h.01"/>') },
+    ];
+    document.getElementById('statCards').innerHTML = cards.map(c =>
+      `<div class="card card-pad stat-card stat-${c.tone}"><div class="stat-top"><span class="stat-ico">${c.icon}</span><span class="lbl">${c.label}</span></div><div class="stat-val tnum">${c.value}</div><div class="stat-sub">${esc(c.sub)}</div></div>`
+    ).join('');
+    const total = matches.matched + matches.needs_review + matches.unmatched;
+    const pct = (n) => total ? n / total * 100 : 0;
+    document.getElementById('barM').style.width = pct(matches.matched) + '%';
+    document.getElementById('barR').style.width = pct(matches.needs_review) + '%';
+    document.getElementById('barU').style.width = pct(matches.unmatched) + '%';
+    document.getElementById('matchLegend').innerHTML = `Matched <strong>${matches.matched}</strong> · Needs review <strong>${matches.needs_review}</strong> · Unmatched <strong>${matches.unmatched}</strong>`;
+    document.getElementById('matchBarsub').textContent = total ? `${total} invoices scored` : 'Run a scan to score invoices';
+    renderOverviewInsights(overview);
+  } catch (e) { if (requestId === overviewRequestId) toast(e.message, true); }
+}
+
+function renderOverviewInsights(data) {
+  const { invoices, matches, recentScans } = data;
+  const attentionCount = Math.max(0, invoices.total - matches.matched);
+  const rate = invoices.total ? Math.round(matches.matched / invoices.total * 100) : 0;
+  document.getElementById('overviewRate').textContent = invoices.total ? rate + '%' : '—';
+  document.getElementById('overviewRing').style.setProperty('--completion', rate + '%');
+  document.getElementById('overviewRing').setAttribute('aria-label', `${matches.matched} of ${invoices.total} invoices matched`);
+  document.getElementById('overviewHeadline').textContent = invoices.total
+    ? attentionCount ? `${attentionCount} invoice${attentionCount === 1 ? '' : 's'} could use your attention. Let’s close the gaps.` : 'Every invoice has a match. Your workspace is looking good.'
+    : 'Connect your accounts and run your first scan to bring everything together.';
+  document.getElementById('overviewProgressTitle').textContent = invoices.total ? `${matches.matched} of ${invoices.total} invoices matched` : 'A fresh start';
+  document.getElementById('overviewProgressSub').textContent = invoices.total ? `${invoices.extracted} extracted · ${matches.needs_review} to review` : 'Your first scan starts the story.';
+  document.getElementById('overviewAttentionCount').textContent = attentionCount ? `${attentionCount} to resolve` : 'All clear';
+  const attention = data.attention ?? [];
+  document.getElementById('overviewAttention').innerHTML = attention.length ? attention.map(inv => {
+    const status = inv.status === 'failed' ? 'failed' : inv.status === 'pending' ? 'pending' : inv.match_status || 'unmatched';
+    const hint = inv.status === 'failed' ? 'Extraction failed · review the original' : inv.status === 'pending' ? 'Waiting for extraction' : inv.match_status === 'needs_review' ? 'Confirm the suggested payment' : 'Find a matching payment';
+    return `<div class="overview-invoice-row"><span class="overview-invoice-icon" aria-hidden="true">${inv.status === 'failed' ? '!' : '↗'}</span><div class="overview-invoice-copy"><strong>${esc(inv.vendor_name || inv.drive_file_name || 'Invoice')}</strong><span>${esc(inv.invoice_number || inv.drive_file_name || hint)}</span><span class="overview-invoice-hint">${esc(hint)}</span></div><div class="overview-invoice-meta"><strong class="tnum">${esc(money(inv.amount, inv.currency))}</strong>${statusChip(status)}</div><button class="btn btn-ghost" data-overview-review="${esc(inv.id)}" aria-label="Review ${esc(inv.drive_file_name || 'invoice')}">Review</button></div>`;
+  }).join('') : `<div class="overview-empty"><span aria-hidden="true">${invoices.total ? '✓' : '↗'}</span><strong>${invoices.total ? attentionCount ? 'Your invoices are ready to review' : 'You’re all caught up' : 'Your next step starts here'}</strong><p>${invoices.total ? attentionCount ? 'Open your invoices to review outstanding matches.' : 'Matched invoices are available whenever you need them.' : 'Choose your Drive folders, connect a payment account, and run a scan.'}</p></div>`;
+  document.querySelectorAll('[data-overview-review]').forEach(button => button.addEventListener('click', () => openInvoiceModal(button.dataset.overviewReview)));
+  const currencies = data.currencyTotals ?? [];
+  document.getElementById('overviewCurrencyTotals').innerHTML = currencies.length ? currencies.map(item => {
+    const matchedPercent = Number(item.total) > 0 ? Math.min(100, Math.max(0, Number(item.matched) / Number(item.total) * 100)) : 0;
+    return `<div class="overview-currency"><div class="overview-currency-head"><span class="chip chip-neutral">${esc(item.currency)}</span><strong class="tnum">${esc(money(item.total, item.currency))}</strong></div><div class="overview-value-track"><span style="width:${matchedPercent}%"></span></div><div class="overview-value-labels"><span>Matched <strong>${esc(money(item.matched, item.currency))}</strong></span><span>Remaining <strong>${esc(money(item.outstanding, item.currency))}</strong></span></div></div>`;
+  }).join('') : '<div class="overview-empty"><span aria-hidden="true">—</span><strong>No totals yet</strong><p>Values appear after invoices with an amount and currency are extracted.</p></div>';
+  document.getElementById('scans').innerHTML = recentScans.length ? recentScans.slice(0, 4).map(s => {
+    const elapsed = s.finished_at ? Math.max(0, Math.round((new Date(s.finished_at) - new Date(s.started_at)) / 1000)) : null;
+    const duration = elapsed == null || !Number.isFinite(elapsed) ? '' : elapsed < 60 ? `${elapsed}s` : `${Math.floor(elapsed / 60)}m ${elapsed % 60}s`;
+    return `<div class="overview-activity-row"><span class="overview-activity-dot ${s.status === 'success' ? 'is-success' : s.status === 'failed' ? 'is-failed' : ''}" aria-hidden="true"></span><div class="overview-activity-copy"><div><strong>${s.trigger === 'manual' ? 'Manual scan' : s.trigger === 'rescan' ? 'Invoice re-scan' : 'Scheduled scan'}</strong>${statusChip(s.status)}</div><span>${s.files_new ?? 0} new · ${s.files_rescanned ?? 0} re-scanned · ${s.transactions_synced ?? 0} payments synced${duration ? ' · ' + duration : ''}</span></div><time>${esc(fmtDate(s.started_at))}</time></div>`;
+  }).join('') : '<div class="overview-empty"><span aria-hidden="true">◷</span><strong>No scans yet</strong><p>Run a scan to see your activity here.</p></div>';
+  const latest = recentScans[0];
+  const cadence = data.sync?.cadence;
+  const pulse = [
+    ['Extraction', `${invoices.extracted} ready · ${invoices.pending ?? 0} pending · ${invoices.failed ?? 0} failed`],
+    ['Latest scan', data.scanRunning ? 'Running now' : latest ? `${fmtDate(latest.finished_at || latest.started_at)} · ${latest.status}` : 'No scans yet'],
+    ['Recurring sync', cadence && cadence !== 'none' ? `Every ${cadence}` : 'Not scheduled'],
+    ['Next scan', data.sync?.next_run_at ? new Date(data.sync.next_run_at).toLocaleString(undefined, { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' }) : 'Run manually any time'],
+  ];
+  document.getElementById('overviewPulse').innerHTML = pulse.map(([label, value]) => `<div class="overview-pulse-row"><span>${esc(label)}</span><strong>${esc(value)}</strong></div>`).join('');
+}
+
+function parseReasons(m) {
+  if (Array.isArray(m)) return m;
+  if (typeof m !== 'string' || !m.trim()) return [];
+  try {
+    const parsed = JSON.parse(m);
+    return Array.isArray(parsed) ? parsed : [];
+  } catch {
+    return [m];
+  }
+}
+
+let invoiceCache = new Map();
+
+function renderCollectionSummary(id, items) {
+  document.getElementById(id).innerHTML = items.map(([value,label],index) => `<div><span class="collection-stat-dot tone-${index}" aria-hidden="true"></span><strong class="tnum">${esc(value ?? 0)}</strong><span>${esc(label)}</span></div>`).join('');
+}
+
+async function loadInvoices() {
+  const btn = document.getElementById('invReload');
+  const rowsEl = document.getElementById('invRows');
+  const emptyEl = document.getElementById('invEmpty');
+  if (btn) { btn.disabled = true; btn.innerHTML = '<span class="spinner"></span> Loading…'; }
+  else rowsEl.innerHTML = '<tr class="tbl-loading"><td colspan="5">Loading invoices…</td></tr>';
+  try {
+    const status = document.getElementById('invFilter').value;
+    const matchStatus = document.getElementById('invMatchFilter').value;
+    const q = new URLSearchParams({ limit: '100' });
+    if (status) q.set('status', status);
+    if (matchStatus) q.set('match_status', matchStatus);
+    const d = await api('/api/dashboard/invoices?' + q.toString());
+    const rows = d.invoices || [];
+    invoiceCache = new Map(rows.map(r => [String(r.id), r]));
+    emptyEl.hidden = rows.length > 0;
+    document.getElementById('invListCount').textContent = `${rows.length} invoices shown${status || matchStatus ? ' · filtered view' : ' · latest 100'}`;
+    const counts = overview;
+    renderCollectionSummary('invOverviewStats', counts ? [
+      [counts.invoices.total, 'Invoices tracked'], [counts.matches.needs_review, 'Need review'], [counts.matches.unmatched, 'Awaiting a match'],
+    ] : [[rows.length, 'Invoices shown'], [rows.filter(r => r.match_status === 'needs_review').length, 'Need review in this view'], [rows.filter(r => r.match_status === 'unmatched').length, 'Unmatched in this view']]);
+    emptyEl.innerHTML = status || matchStatus ? '<strong>No invoices match these filters</strong><p>Choose a different status or match filter to see more documents.</p>' : '<strong>Your invoice library starts here</strong><p>Choose your Drive folders and run a scan to bring in your documents.</p>';
+    rowsEl.innerHTML = rows.map(r => {
+      const reasons = parseReasons(r.match_reasons);
+      const matchedTxn = r.matched_txn_id
+        ? `<strong class="table-payment-id tnum" title="${esc(r.matched_txn_id)}">${esc(r.matched_txn_id)}</strong><span class="table-secondary">${esc(r.matched_txn_provider === 'razorpay' ? 'Razorpay' : 'PayPal')} · ${esc(money(r.matched_amount, r.matched_currency))}</span>${r.matched_txn_date ? `<span class="table-secondary">Paid ${esc(fmtDate(r.matched_txn_date))}</span>` : ''}${r.matched_txn_payer ? `<span class="table-secondary">${esc(r.matched_txn_payer)}</span>` : ''}`
+        : '<span class="table-secondary">No linked payment</span>';
+      return `<tr>
+        <td><div class="table-document"><span class="table-document-icon" aria-hidden="true">↗</span><div><strong title="${esc(r.drive_file_name || '')}">${esc(r.vendor_name || r.drive_file_name || 'Invoice')}</strong><span class="table-secondary">${esc(r.invoice_number || 'No invoice number')}</span><span class="table-secondary" title="${esc(r.drive_file_name || r.drive_file_id)}">${esc(r.drive_file_name || r.drive_file_id || '—')}</span>${r.status !== 'extracted' ? statusChip(r.status) : ''}</div></div></td>
+        <td><strong class="tnum">${esc(money(r.amount, r.currency))}</strong><span class="table-secondary">${esc(fmtDate(r.invoice_date))}</span>${r.due_date ? `<span class="table-secondary">Due ${esc(fmtDate(r.due_date))}</span>` : ''}</td>
+        <td><div class="table-match-state">${r.match_status ? statusChip(r.match_status) : '<span class="chip chip-neutral">Not scored</span>'}${r.match_percentage == null ? '' : `<span class="table-strength tnum" title="Matching signals, not a probability">${esc(r.match_percentage)}%</span>`}</div>${r.match_decision === 'manual' ? '<span class="table-secondary">Manual decision</span>' : ''}${reasons.length ? `<details class="table-signals"><summary>${reasons.length} matching signal${reasons.length === 1 ? '' : 's'}</summary><ul>${reasons.map(reason => `<li>${esc(reason)}</li>`).join('')}</ul></details>` : ''}</td>
+        <td>${matchedTxn}</td>
+        <td class="invoice-actions-cell"><div class="table-invoice-actions"><div class="table-actions-primary"><button class="btn btn-ghost" data-view="${esc(r.id)}">Review ↗</button><button class="btn btn-primary" data-paynow="${esc(r.id)}">Pay Now</button></div><div class="table-actions-secondary"><button class="btn btn-quiet" data-matchnow="${esc(r.id)}">Match now</button><button class="btn btn-quiet" data-rescan="${esc(r.id)}">Re-scan</button></div></div></td>
+      </tr>`;
+    }).join('');
+    document.querySelectorAll('[data-paynow]').forEach(b => b.addEventListener('click', () => payNowForInvoice(b.dataset.paynow, { api, toast, refresh: async () => { await loadInvoices(); refreshOverview(); } })));
+    document.querySelectorAll('[data-rescan]').forEach(b => b.addEventListener('click', async () => {
+      try {
+        await api(`/api/dashboard/invoices/${b.dataset.rescan}/rescan`, { method: 'POST', body: {} });
+        toast('Re-scan started — track it on the Scans page');
+        showTab('scans');
+      } catch (e) { toast(e.message, true); }
+    }));
+    document.querySelectorAll('[data-view]').forEach(b => b.addEventListener('click', () => openInvoiceModal(b.dataset.view)));
+    document.querySelectorAll('[data-matchnow]').forEach(b => b.addEventListener('click', () => matchInvoiceNow(b)));
+  } catch (e) {
+    rowsEl.innerHTML = `<tr class="tbl-loading"><td colspan="5">Failed to load invoices: ${esc(e.message)}</td></tr>`;
+    emptyEl.hidden = true;
+    toast(e.message, true);
+  } finally {
+    if (btn) { btn.disabled = false; btn.textContent = 'Refresh'; }
+  }
+}
+
+async function matchInvoiceNow(btn) {
+  const id = btn.dataset.matchnow;
+  btn.disabled = true;
+  const original = btn.innerHTML;
+  btn.innerHTML = '<span class="spinner"></span> Matching…';
+  try {
+    const d = await api(`/api/dashboard/invoices/${id}/match`, { method: 'POST', body: {} });
+    toast(d.message);
+    await loadInvoices();
+    await openInvoiceModal(id);
+    refreshOverview();
+  } catch (e) { toast(e.message, true); }
+  finally { btn.disabled = false; btn.innerHTML = original; }
+}
+
+// --- Invoice detail modal (original file + extracted data) ---
+let invZoom = 1;
+let currentInvoiceId = null;
+let invoiceOpenRequest = 0;
+let candidateRequest = 0;
+let reviewBusy = false;
+function setInvZoom(v) {
+  invZoom = Math.min(3, Math.max(0.25, v));
+  document.getElementById('invZoomLabel').textContent = Math.round(invZoom * 100) + '%';
+  const img = document.querySelector('#invOriginalStage img.zoom-img');
+  if (img) img.style.transform = `scale(${invZoom})`;
+}
+function openModal(id) { document.getElementById(id).hidden = false; document.body.style.overflow = 'hidden'; }
+function closeModal(id) { document.getElementById(id).querySelectorAll('.viewer-stage').forEach(clearFilePreview); document.getElementById(id).hidden = true; document.body.style.overflow = ''; if (id === 'invoiceModal') { currentInvoiceId = null; invoiceOpenRequest++; candidateRequest++; } }
+
+async function openInvoiceModal(id) {
+  clearFilePreview(document.getElementById('invOriginalStage'));
+  const request = ++invoiceOpenRequest;
+  currentInvoiceId = String(id);
+  document.getElementById('invOpenOriginal').href = `/api/dashboard/invoices/${encodeURIComponent(id)}/file`;
+  document.getElementById('invCandidateSearch').value = '';
+  document.getElementById('invMatchSummary').textContent = 'Loading match…';
+  document.getElementById('invCandidates').innerHTML = '<div class="empty"><span class="spinner" style="border-color:rgba(26,25,23,.2);border-top-color:var(--ink);"></span> Loading payments…</div>';
+  document.getElementById('invCandidateStatus').textContent = 'Finding closest payments…';
+  const cached = invoiceCache.get(String(id));
+  openModal('invoiceModal');
+  document.getElementById('invTabOriginal').classList.add('on');
+  document.getElementById('invTabExtracted').classList.remove('on');
+  document.getElementById('invModalOriginal').hidden = false;
+  document.getElementById('invModalExtracted').hidden = true;
+  document.getElementById('invModalTitle').textContent = cached?.drive_file_name || 'Invoice';
+  document.getElementById('invModalSub').textContent = [cached?.invoice_number, cached?.vendor_name, money(cached?.amount, cached?.currency)].filter(Boolean).join(' · ') || '';
+  document.getElementById('invOriginalStage').innerHTML = '<div class="empty"><span class="spinner" style="border-color:rgba(26,25,23,.2);border-top-color:var(--ink);"></span> Loading original file…</div>';
+  document.getElementById('invImgToolbar').hidden = true;
+  document.getElementById('invOpenDrive').href = cached?.drive_web_view_link || '#';
+  document.getElementById('invOpenDrive').style.display = cached?.drive_web_view_link ? '' : 'none';
+
+  let inv = cached;
+  if (!inv) {
+    try {
+      const d = await api(`/api/dashboard/invoices/${encodeURIComponent(id)}`);
+      if (request !== invoiceOpenRequest) return;
+      if (d.invoice) { inv = d.invoice; invoiceCache.set(String(id), inv); }
+    } catch (e) {
+      if (request !== invoiceOpenRequest) return;
+      document.getElementById('invOriginalStage').innerHTML = `<div class="empty">Failed to load invoice: ${esc(e.message)}</div>`;
+      document.getElementById('invExtractedBody').innerHTML = `<div class="empty">Failed to load invoice: ${esc(e.message)}</div>`;
+      toast(e.message, true);
+      return;
+    }
+  } else {
+    try {
+      const d = await api(`/api/dashboard/invoices/${encodeURIComponent(inv.id)}`);
+      if (request !== invoiceOpenRequest) return;
+      if (d.invoice) { inv = d.invoice; invoiceCache.set(String(id), inv); }
+    } catch (e) {
+      toast('Showing cached data — refresh failed: ' + e.message, true);
+    }
+  }
+  if (request !== invoiceOpenRequest) return;
+  document.getElementById('invModalTitle').textContent = inv?.drive_file_name || 'Invoice';
+  document.getElementById('invModalSub').textContent = [inv?.invoice_number, inv?.vendor_name, inv ? money(inv.amount, inv.currency) : ''].filter(Boolean).join(' · ') || '';
+  document.getElementById('invOpenDrive').href = inv?.drive_web_view_link || '#';
+  document.getElementById('invOpenDrive').style.display = inv?.drive_web_view_link ? '' : 'none';
+  renderExtractedData(inv);
+  renderInvoiceOriginal(inv);
+  renderMatchSummary(inv);
+  loadMatchReview(id);
+  try { loadExplanation(id, { api }); } catch {}
+  const payBtn = document.getElementById('invPayNow');
+  if (payBtn) payBtn.disabled = reviewBusy;
+  const payStatus = document.getElementById('payNowStatus');
+  if (payStatus) payStatus.innerHTML = '';
+}
+
+function renderMatchSummary(inv) {
+  const reasons = parseReasons(inv.match_reasons);
+  document.getElementById('invMatchSummary').innerHTML = `<div class="match-summary">
+    <div class="match-summary-heading">${statusChip(inv.match_status || 'unmatched')}<strong class="tnum">${inv.match_percentage == null ? '—' : esc(inv.match_percentage) + '%'} <span>strength</span></strong></div>
+    ${inv.matched_txn_id ? `<div class="match-summary-payment"><span>${esc(inv.matched_txn_provider === 'razorpay' ? 'Razorpay' : 'PayPal')}</span><strong class="tnum">${esc(money(inv.matched_amount, inv.matched_currency))}</strong><span class="match-summary-id tnum" title="${esc(inv.matched_txn_id)}">${esc(inv.matched_txn_id)}</span></div>` : ''}
+    <div class="match-summary-footer"><span class="small muted"${inv.match_decision === 'manual' ? ' title="Your manual decision is preserved across scans."' : ''}>${inv.match_decision === 'manual' ? 'Manual match · preserved across scans' : 'Automatic matching'}</span>
+    ${reasons.length ? `<details class="match-summary-signals"><summary>${reasons.length} matching signal${reasons.length === 1 ? '' : 's'}</summary><ul>${reasons.map(r => `<li>${esc(r)}</li>`).join('')}</ul></details>` : ''}</div></div>`;
+  document.getElementById('invUnmatch').disabled = reviewBusy || !inv.matched_txn_id;
+}
+async function loadMatchReview(id, search = '') {
+  const request = ++candidateRequest;
+  const status = document.getElementById('invCandidateStatus');
+  const list = document.getElementById('invCandidates');
+  status.textContent = 'Finding closest payments…';
+  list.innerHTML = '<div class="empty"><span class="spinner" style="border-color:rgba(26,25,23,.2);border-top-color:var(--ink);"></span> Loading payments…</div>';
+  try {
+    const d = await api(`/api/dashboard/invoices/${encodeURIComponent(id)}/candidates?search=${encodeURIComponent(search)}`);
+    if (request !== candidateRequest || currentInvoiceId !== String(id)) return;
+    status.textContent = d.syncError ? `Showing cached payments. ${d.syncError}` : `${d.candidates.length} closest payments shown (${d.total} stored).`;
+    list.innerHTML = d.candidates.length ? d.candidates.map((c,index) => {
+      const blocked = !c.eligible || (c.assigned_invoice_id && c.assigned_invoice_id !== String(id));
+      return `<article class="payment-candidate">
+        <div class="candidate-heading"><strong>${c.percentage}% strength</strong><span class="small muted">${index === 0 && !search ? 'Closest candidate' : ''}</span></div>
+        <div class="tnum small">${esc(c.provider === 'razorpay' ? 'Razorpay' : 'PayPal')} · ${esc(c.provider_transaction_id)}</div>
+        <dl class="kv small"><dt>Invoice amount</dt><dd>${esc(money(d.invoice.amount,d.invoice.currency))}</dd>
+          <dt>Payment amount</dt><dd>${esc(money(c.amount,c.currency))}</dd>
+          <dt>Payment date</dt><dd>${esc(fmtDate(c.transaction_initiated_at))}</dd>
+          <dt>Payer</dt><dd>${esc(c.payer_email || 'Unknown')}</dd><dt>Payment status</dt><dd>${esc(c.status || 'Unknown')}</dd></dl>
+        <div class="signal-list">${c.reasons.map(r=>`<span class="signal-match">✓ ${esc(r)}</span>`).join('') || '<span class="muted small">No matching signals</span>'}</div>
+        ${c.conflicts.length ? `<ul class="candidate-conflicts small">${c.conflicts.map(r=>`<li>${esc(r)}</li>`).join('')}</ul>` : ''}
+        <details><summary class="small">Payment details</summary><pre class="candidate-json">${esc(JSON.stringify(c.raw_json,null,2))}</pre></details>
+        <button class="btn btn-primary" data-choose-payment="${esc(c.id)}" data-unavailable="${blocked ? 'true' : 'false'}" ${blocked || reviewBusy ? 'disabled' : ''}>${blocked ? 'Unavailable' : c.conflicts.length ? 'Match despite differences' : 'Match this payment'}</button>
+      </article>`;
+    }).join('') : '<div class="empty">No payments found. Try another search or check for new payments.</div>';
+    list.querySelectorAll('[data-choose-payment]').forEach(button => button.addEventListener('click', () => changeInvoiceMatch('PUT', {transactionId:button.dataset.choosePayment})));
+  } catch(e) { if (request === candidateRequest && currentInvoiceId === String(id)) { status.textContent = e.message; document.getElementById('invCandidates').innerHTML = '<div class="empty">Payments could not be loaded. Use “Check for new payments” to retry.</div>'; } }
+}
+async function refreshInvoiceReview(id) {
+  const d = await api(`/api/dashboard/invoices/${id}`);
+  invoiceCache.set(String(id),d.invoice);
+  if (currentInvoiceId === String(id)) { renderMatchSummary(d.invoice); renderExtractedData(d.invoice); }
+  await loadInvoices();
+  refreshOverview();
+}
+function setReviewBusy(busy) {
+  ['invAutoMatch','invSearchPayments','invSyncPayments'].forEach(id=>document.getElementById(id).disabled=busy);
+  document.querySelectorAll('[data-choose-payment]').forEach(b=>b.disabled=busy || b.dataset.unavailable==='true');
+  const inv=invoiceCache.get(currentInvoiceId);
+  if(inv) renderMatchSummary(inv);
+}
+async function changeInvoiceMatch(method, body) {
+  if (reviewBusy || !currentInvoiceId) return;
+  const id = currentInvoiceId;
+  reviewBusy = true;
+  setReviewBusy(true);
+  try {
+    const d = await api(`/api/dashboard/invoices/${id}/match`, {method,body});
+    toast(d.message);
+    await refreshInvoiceReview(id);
+  } catch(e) { toast(e.message,true); }
+  finally {
+    reviewBusy = false;
+    setReviewBusy(false);
+    if (currentInvoiceId === id) { const inv = invoiceCache.get(id); if (inv) renderMatchSummary(inv); await loadMatchReview(id,document.getElementById('invCandidateSearch').value); }
+  }
+}
+document.getElementById('invUnmatch').addEventListener('click',()=>changeInvoiceMatch('DELETE'));
+document.getElementById('invAutoMatch').addEventListener('click',()=>changeInvoiceMatch('POST',{}));
+document.getElementById('invSearchPayments').addEventListener('click',()=> { if(currentInvoiceId) loadMatchReview(currentInvoiceId,document.getElementById('invCandidateSearch').value); });
+document.getElementById('invCandidateSearch').addEventListener('keydown',e=> { if(e.key==='Enter') document.getElementById('invSearchPayments').click(); });
+document.getElementById('invSyncPayments').addEventListener('click',async e=> {
+  if(!currentInvoiceId || reviewBusy) return;
+  const id=currentInvoiceId, button=e.currentTarget;
+  button.disabled=true; button.textContent='Updating…';
+  try { const d=await api(`/api/dashboard/invoices/${id}/candidates/sync`,{method:'POST',body:{}}); toast(d.message); if(currentInvoiceId===id) await loadMatchReview(id,document.getElementById('invCandidateSearch').value); }
+  catch(err) { toast(err.message,true); }
+  finally { button.disabled=false; button.textContent='Check for new payments'; }
+});
+
+function renderExtractedData(inv) {
+  if (!inv) return;
+  let parsed = inv.extracted_json;
+  if (typeof parsed === 'string') { try { parsed = JSON.parse(parsed); } catch { parsed = null; } }
+  const kv = [
+    ['Invoice #', inv.invoice_number], ['Vendor', inv.vendor_name],
+    ['Amount', money(inv.amount, inv.currency)], ['Invoice date', fmtDate(inv.invoice_date)],
+    ['Due date', fmtDate(inv.due_date)], ['Payer email', inv.payer_email],
+    ['Status', inv.status], ['Match', inv.match_status ? `${inv.match_status} (${inv.match_percentage ?? 0}% strength)` : '—'],
+    ['Matched txn', inv.matched_txn_id || '—'], ['File', inv.drive_file_name],
+    ['MIME', inv.mime_type], ['Last scanned', fmtDate(inv.last_scanned_at)],
+  ];
+  const summaryText = kv.map(([k, v]) => `${k}: ${v ?? '—'}`).join('\n');
+  const jsonText = parsed ? JSON.stringify(parsed, null, 2) : '';
+  document.getElementById('invExtractedBody').innerHTML =
+    `<div style="display:flex;align-items:center;gap:8px;">
+       <div class="lbl">Summary</div><span style="flex:1"></span>
+       <button class="btn btn-ghost copy-btn" id="invCopySummary">Copy</button>
+     </div>
+     <dl class="kv" style="margin-top:8px;">${kv.map(([k, v]) => `<dt>${esc(k)}</dt><dd>${esc(v ?? '—')}</dd>`).join('')}</dl>
+     <div style="display:flex;align-items:center;gap:8px;margin-top:14px;">
+       <div class="lbl">Extracted JSON</div><span style="flex:1"></span>
+       <button class="btn btn-ghost copy-btn" id="invCopyJson">Copy JSON</button>
+     </div>
+     <pre class="json" style="margin-top:8px;">${esc(jsonText || '—')}</pre>`;
+  document.getElementById('invCopySummary')?.addEventListener('click', (e) => copyText(summaryText, e.currentTarget));
+  const jsonBtn = document.getElementById('invCopyJson');
+  if (jsonBtn) {
+    if (!jsonText) jsonBtn.disabled = true;
+    jsonBtn.addEventListener('click', (e) => copyText(jsonText, e.currentTarget));
+  }
+}
+
+async function copyText(text, btn) {
+  if (!text) { toast('Nothing to copy', true); return; }
+  try {
+    if (navigator.clipboard?.writeText) await navigator.clipboard.writeText(text);
+    else {
+      const ta = document.createElement('textarea');
+      ta.value = text; document.body.append(ta); ta.select();
+      document.execCommand('copy'); ta.remove();
+    }
+    const original = btn ? btn.textContent : '';
+    if (btn) { btn.textContent = 'Copied ✓'; setTimeout(() => { btn.textContent = original; }, 1500); }
+    toast('Copied to clipboard');
+  } catch { toast('Copy failed — select the text manually', true); }
+}
+
+function renderInvoiceOriginal(inv) {
+  const stage = document.getElementById('invOriginalStage');
+  const toolbar = document.getElementById('invImgToolbar');
+  if (!inv) { stage.innerHTML = '<div class="empty">Invoice not found.</div>'; return; }
+  const url = `/api/dashboard/invoices/${inv.id}/file`;
+  const isDemo = String(inv.drive_file_id || '').startsWith('demo-');
+  const mime = isDemo ? 'image/svg+xml' : String(inv.mime_type || '');
+  invZoom = 1;
+  const label = document.getElementById('invZoomLabel');
+  if (label) label.textContent = '100%';
+  loadFilePreview({ stage, toolbar, url, mime, name: inv.drive_file_name || 'Invoice' });
+}
+
+let scanHistoryCache = [];
+let scanHistoryRequest = 0;
+function mergeScanProgress(run, progress) {
+  if (!progress || run.status !== 'running') return run;
+  return { ...run, files_total: progress.total ?? run.files_total, files_processed: progress.processed ?? run.files_processed,
+    files_new: progress.filesNew ?? run.files_new, files_rescanned: progress.filesRescanned ?? run.files_rescanned,
+    current_stage: progress.stage ?? run.current_stage, current_file: progress.currentFile ?? run.current_file };
+}
+function syncScanHistory(s) {
+  if (!s.running || !s.latest) return;
+  const index = scanHistoryCache.findIndex(run => run.id === s.latest.id);
+  if (index < 0) return;
+  scanHistoryCache[index] = mergeScanProgress(s.latest, s.progress);
+  renderScanHistory();
+}
+function renderScanCurrent(s) {
+  const el = document.getElementById('scanCurrent');
+  if (!el) return;
+  const latest = s?.latest ?? s?.scans?.[0] ?? null;
+  const running = !!s?.running;
+  const p = running ? s.progress : null;
+  const stage = p?.stage || latest?.current_stage || 'starting';
+  const cancelling = running && (p?.cancelRequested || latest?.cancel_requested);
+  const total = scanCount(p?.total ?? latest?.files_total ?? latest?.files_seen);
+  const done = scanCount(p?.processed ?? latest?.files_processed);
+  const pct = total > 0 ? Math.min(100, Math.round(done / total * 100)) : null;
+  const title = cancelling ? 'Wrapping things up.' : running ? 'Your scan is in motion.' : latest?.status === 'failed' ? 'Let’s get back on track.' : latest?.status === 'cancelled' ? 'Stopped, with progress kept.' : latest ? 'Your latest scan is complete.' : 'Ready for a fresh scan?';
+  const subtitle = cancelling ? 'Stopping after the current file. Extracted invoices will be kept.' : running ? stageLabel(stage) : latest?.status === 'failed' ? 'The last run hit a problem. Review the details, then try again.' : latest?.status === 'cancelled' ? 'The last run was cancelled. Start another scan when you’re ready.' : latest ? `Finished ${scanTime(latest.finished_at || latest.started_at)} · ${scanDuration(latest)}` : 'Bring in new invoices and match them to your payments.';
+  el.innerHTML = `<div class="scans-current-heading"><h2>${title}</h2>${running ? (cancelling ? '<span class="chip chip-warn">Cancelling</span>' : statusChip('running')) : latest ? statusChip(latest.status) : '<span class="chip chip-neutral">Ready</span>'}</div><p class="scans-current-sub">${esc(subtitle)}</p>
+    ${running ? `<div class="scans-file-progress"><div><span>Files processed</span><strong class="tnum">${total ? `${done} / ${total}` : 'Discovering…'}</strong></div><div class="progress-track" role="progressbar" aria-label="Files processed" aria-valuemin="0" aria-valuemax="100"${pct === null ? '' : ` aria-valuenow="${pct}"`}><div class="progress-fill ${pct === null ? 'indeterminate' : ''}" style="${pct === null ? '' : `width:${pct}%`}"></div></div></div>` : ''}
+    <div class="scans-run-metrics">${[[p?.filesNew ?? latest?.files_new, 'New invoices'], [p?.filesRescanned ?? latest?.files_rescanned, 'Re-scanned'], [latest?.transactions_synced, 'Payments synced']].map(([n,label]) => `<div><strong class="tnum">${scanCount(n)}</strong><span>${label}</span></div>`).join('')}</div>
+    ${running ? renderScanSteps(stage) : ''}
+    ${running && (p?.currentFile || latest?.current_file) ? `<div class="scans-current-file"><span class="spinner" aria-hidden="true"></span><span title="${esc(p?.currentFile || latest.current_file)}">${esc(p?.currentFile || latest.current_file)}</span></div>` : ''}
+    ${latest?.status === 'failed' && !running ? `<div class="scan-error" role="alert">${esc(latest.error || 'The scan could not finish. Try running it again.')}</div>` : ''}`;
+}
+function renderScanSteps(stage) {
+  const steps = [['listing', 'Find files'], ['extracting', 'Extract'], ['syncing-paypal', 'Sync payments'], ['matching', 'Match']];
+  const current = stage === 'syncing-razorpay' ? 2 : steps.findIndex(([key]) => key === stage);
+  return `<ol class="scans-steps">${steps.map(([,label],index) => `<li class="${index < current ? 'is-done' : index === current ? 'is-active' : ''}"${index === current ? ' aria-current="step"' : ''}><span>${index < current ? '✓' : index + 1}</span>${label}</li>`).join('')}</ol>`;
+}
+function renderScanHistory() {
+  const openRuns = new Set([...document.querySelectorAll('.scan-run-details[open]')].map(details => details.closest('[data-scan-id]').dataset.scanId));
+  const focusId = document.activeElement?.tagName === 'SUMMARY' ? document.activeElement.closest('[data-scan-id]')?.dataset.scanId : null;
+  const filter = document.getElementById('scanHistoryFilter').value;
+  const scans = scanHistoryCache.filter(s => !filter || s.status === filter);
+  const successful = scanHistoryCache.filter(s => s.status === 'success').length;
+  const failed = scanHistoryCache.filter(s => s.status === 'failed').length;
+  const newInvoices = scanHistoryCache.reduce((sum,s) => sum + scanCount(s.files_new), 0);
+  document.getElementById('scanHistoryStats').innerHTML = `<span><strong>${scanHistoryCache.length}</strong> recent runs</span><span><i class="scan-stat-dot is-success" aria-hidden="true"></i><strong>${successful}</strong> successful</span><span><i class="scan-stat-dot is-failed" aria-hidden="true"></i><strong>${failed}</strong> failed</span><span><strong>${newInvoices}</strong> new invoices</span>`;
+  document.getElementById('scanHistory').innerHTML = scans.length ? scans.map(scanRowHtml).join('') : `<div class="overview-empty"><span aria-hidden="true">◷</span><strong>${filter ? 'No runs with this status' : 'Your scan history starts here'}</strong><p>${filter ? 'Choose another filter to see more activity.' : 'Run your first scan. Results and run details will appear here.'}</p></div>`;
+  document.querySelectorAll('.scan-history-row').forEach(row => {
+    if (openRuns.has(row.dataset.scanId)) row.querySelector('details').open = true;
+    if (row.dataset.scanId === focusId) row.querySelector('summary').focus({ preventScroll: true });
+  });
+}
+async function loadScans() {
+  const request = ++scanHistoryRequest;
+  const hist = document.getElementById('scanHistory');
+  const button = document.getElementById('scansReload');
+  button.disabled = true;
+  button.textContent = 'Refreshing…';
+  if (!scanHistoryCache.length) hist.innerHTML = '<div class="overview-empty"><span class="spinner"></span>Loading scan activity…</div>';
+  try {
+    const d = await api('/api/dashboard/scans?limit=20');
+    if (request !== scanHistoryRequest) return;
+    setScanButtons(!!d.running);
+    renderScanCurrent(d);
+    scanHistoryCache = d.scans.map(run => run.id === (d.latest?.id ?? d.scans[0]?.id) ? mergeScanProgress(run, d.progress) : run);
+    renderScanHistory();
+  } catch (e) {
+    if (request !== scanHistoryRequest) return;
+    if (!scanHistoryCache.length) hist.innerHTML = `<div class="overview-empty"><strong>Activity couldn’t be loaded</strong><p>${esc(e.message)}</p></div>`;
+    toast(e.message, true);
+  } finally {
+    if (request === scanHistoryRequest) { button.disabled = false; button.textContent = 'Refresh'; }
+  }
+}
+
+let transactionRows = [];
+let transactionTotals = { paypal: 0, razorpay: 0 };
+let transactionSort = { key: 'date', direction: 'desc' };
+let transactionPage = 1;
+const transactionPageSize = 50;
+let transactionRequest = 0;
+let transactionReturnFocus = null;
+function transactionStatus(status) {
+  const code = String(status || 'Unknown');
+  return ({ S: 'Completed', P: 'Pending', D: 'Denied', V: 'Reversed' })[code.toUpperCase()] || code.toLowerCase().replaceAll('_', ' ').replace(/\b\w/g, c => c.toUpperCase());
+}
+async function fetchStoredPayments(path, key) {
+  const records = [];
+  let total = 0;
+  for (let offset = 0; ; offset += 200) {
+    const d = await api(`${path}?limit=200&offset=${offset}`);
+    const batch = d[key] || [];
+    records.push(...batch);
+    total = Number(d.total ?? records.length);
+    if (batch.length < 200 || records.length >= total) break;
+  }
+  return { records, total };
+}
+async function loadTxns() {
+  const request = ++transactionRequest;
+  const btn = document.getElementById('txnReload');
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spinner"></span> Loading…';
+  document.getElementById('txnLoadStatus').textContent = 'Loading stored payments…';
+  try {
+    const results = await Promise.allSettled([
+      fetchStoredPayments('/api/integrations/paypal/transactions', 'transactions'),
+      razorpayEnabled ? fetchStoredPayments('/api/integrations/razorpay/payments', 'payments') : Promise.resolve({ records: [], total: 0 }),
+    ]);
+    if (request !== transactionRequest) return;
+    const failures = results.map((result,index) => result.status === 'rejected' ? `${index ? 'Razorpay' : 'PayPal'} payments couldn’t be loaded: ${result.reason.message || result.reason}` : '').filter(Boolean);
+    if (results.every(result => result.status === 'rejected')) throw new Error(failures.join(' '));
+    const pp = results[0].status === 'fulfilled' ? results[0].value : { records: [], total: 0 };
+    const rz = results[1].status === 'fulfilled' ? results[1].value : { records: [], total: 0 };
+    transactionTotals = { paypal: pp.total, razorpay: rz.total };
+    transactionRows = [...pp.records.map((raw,index) => ({ key: 'paypal-' + index, id: raw.paypal_transaction_id, provider: 'PayPal', amount: raw.amount, currency: raw.currency, payer: raw.payer_email || raw.payer_name || '', date: raw.transaction_initiated_at, status: transactionStatus(raw.status), raw })), ...rz.records.map((raw,index) => ({ key: 'razorpay-' + index, id: raw.razorpay_payment_id, provider: 'Razorpay', amount: raw.amount, currency: raw.currency, payer: raw.payer_email || raw.payer_contact || '', date: raw.transaction_initiated_at, status: transactionStatus(raw.status), raw }))];
+    for (const [id, key, label] of [['txnStatusFilter', 'status', 'All statuses'], ['txnCurrencyFilter', 'currency', 'All currencies']]) {
+      const select = document.getElementById(id), selected = select.value;
+      const values = [...new Set(transactionRows.map(t => t[key]).filter(Boolean))].sort();
+      select.innerHTML = `<option value="">${label}</option>` + values.map(value => `<option value="${esc(value)}">${esc(value)}</option>`).join('');
+      select.value = values.includes(selected) ? selected : '';
+    }
+    renderCollectionSummary('txnOverviewStats', [[pp.total + rz.total, 'Payments stored'], [pp.total, 'From PayPal'], [rz.total, razorpayEnabled ? 'From Razorpay' : 'Razorpay disabled']]);
+    document.getElementById('txnLoadStatus').textContent = failures.join(' ');
+    renderTransactions();
+  } catch (e) {
+    if (request === transactionRequest) { document.getElementById('txnLoadStatus').textContent = e.message; toast(e.message, true); }
+  } finally {
+    if (request === transactionRequest) { btn.disabled = false; btn.textContent = 'Refresh'; }
+  }
+}
+function renderTransactions() {
+  const search = document.getElementById('txnSearch').value.trim().toLowerCase();
+  const provider = document.getElementById('txnProviderFilter').value;
+  const status = document.getElementById('txnStatusFilter').value;
+  const currency = document.getElementById('txnCurrencyFilter').value;
+  const from = document.getElementById('txnDateFrom').value;
+  const to = document.getElementById('txnDateTo').value;
+  const fromTime = from ? new Date(from + 'T00:00:00').getTime() : null;
+  const toTime = to ? new Date(to + 'T23:59:59.999').getTime() : null;
+  const filtered = transactionRows.filter(t => {
+    const date = new Date(t.date).getTime();
+    return (!provider || t.provider === provider) && (!status || t.status === status) && (!currency || t.currency === currency)
+      && (!search || [t.id,t.payer,t.raw.payer_name,t.raw.payer_contact,t.raw.description,t.raw.paypal_reference_id,t.raw.razorpay_order_id].join(' ').toLowerCase().includes(search))
+      && (fromTime === null || Number.isFinite(date) && date >= fromTime) && (toTime === null || Number.isFinite(date) && date <= toTime);
+  });
+  const {key,direction} = transactionSort;
+  const sign = direction === 'asc' ? 1 : -1;
+  filtered.sort((a,b) => {
+    let comparison;
+    if (key === 'amount' || key === 'date') {
+      const value = t => key === 'amount' ? t.amount == null ? NaN : Number(t.amount) : t.date ? new Date(t.date).getTime() : NaN;
+      const av=value(a), bv=value(b);
+      if (!Number.isFinite(av)) return Number.isFinite(bv) ? 1 : a.key.localeCompare(b.key);
+      if (!Number.isFinite(bv)) return -1;
+      comparison=av-bv;
+    } else comparison=String(a[key] || '').localeCompare(String(b[key] || ''), undefined, { sensitivity: 'base', numeric: true });
+    return comparison * sign || a.key.localeCompare(b.key);
+  });
+  transactionPage = Math.min(Math.max(1, transactionPage), Math.max(1, Math.ceil(filtered.length / transactionPageSize)));
+  const start = (transactionPage - 1) * transactionPageSize;
+  const rows = filtered.slice(start, start + transactionPageSize);
+  document.getElementById('txnCount').textContent = `${filtered.length} matching · ${transactionTotals.paypal + transactionTotals.razorpay} stored`;
+  document.getElementById('txnPageInfo').textContent = filtered.length ? `${start + 1}–${start + rows.length} of ${filtered.length} payments · click a row for details` : 'No payments to show';
+  document.getElementById('txnPrevPage').disabled = transactionPage <= 1;
+  document.getElementById('txnNextPage').disabled = start + rows.length >= filtered.length;
+  const empty = document.getElementById('txnEmpty');
+  empty.hidden = filtered.length > 0;
+  empty.innerHTML = transactionRows.length ? '<strong>No payments match these filters</strong><p>Clear or adjust your filters to see more payments.</p>' : '<strong>No payments synced yet</strong><p>Connect a payment account, then run a scan to fill your library.</p>';
+  document.getElementById('txnRows').innerHTML = rows.map(t => `<tr class="transaction-row" tabindex="0" data-transaction-key="${esc(t.key)}" aria-label="View ${esc(t.provider)} transaction ${esc(t.id)}">
+    <td><strong class="tnum">${esc(t.id)}</strong></td><td><span class="chip ${t.provider === 'Razorpay' ? 'chip-neutral' : 'chip-info'}">${esc(t.provider)}</span></td><td class="tnum">${esc(money(t.amount,t.currency))}</td><td>${esc(t.payer || '—')}</td><td>${esc(fmtDate(t.date))}</td><td>${statusChip(t.status.toLowerCase())}</td></tr>`).join('');
+  document.querySelectorAll('[data-txn-column]').forEach(th => {
+    const active = th.dataset.txnColumn === key;
+    th.setAttribute('aria-sort', active ? direction === 'asc' ? 'ascending' : 'descending' : 'none');
+    const button = th.querySelector('button');
+    button.querySelector('span').textContent = active ? direction === 'asc' ? '↑' : '↓' : '↕';
+    button.setAttribute('aria-label', `Sort by ${th.dataset.txnColumn}, ${active && direction === 'asc' ? 'descending' : 'ascending'}`);
+  });
+  document.querySelectorAll('[data-transaction-key]').forEach(row => {
+    row.addEventListener('click', () => openTransactionDetails(row.dataset.transactionKey));
+    row.addEventListener('keydown', event => { if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); openTransactionDetails(row.dataset.transactionKey); } });
+  });
+}
+function openTransactionDetails(key) {
+  const t = transactionRows.find(row => row.key === key);
+  if (!t) return;
+  transactionReturnFocus = document.activeElement;
+  const raw = t.raw;
+  document.getElementById('transactionDetailTitle').textContent = t.id || 'Transaction';
+  document.getElementById('transactionDetailSub').textContent = t.provider + ' · ' + scanTime(t.date);
+  const fields = [['Transaction ID',t.id],['Provider',t.provider],['Amount',money(t.amount,t.currency)],['Status',t.status],['Provider status',raw.status],['Payer email',raw.payer_email],['Payer name',raw.payer_name],['Payer contact',raw.payer_contact],['Initiated',raw.transaction_initiated_at ? new Date(raw.transaction_initiated_at).toLocaleString() : null],['Provider updated',raw.transaction_updated_at ? new Date(raw.transaction_updated_at).toLocaleString() : null],['Fee',raw.fee == null ? null : money(raw.fee,t.currency)],['Reference ID',raw.paypal_reference_id],['Event code',raw.event_code],['Order ID',raw.razorpay_order_id],['Invoice ID',raw.razorpay_invoice_id],['Payment method',raw.method],['Description',raw.description]];
+  document.getElementById('transactionDetailBody').innerHTML = `<div class="transaction-detail-amount"><strong>${esc(money(t.amount,t.currency))}</strong>${statusChip(t.status.toLowerCase())}</div><dl class="transaction-detail-fields">${fields.filter(([,value]) => value != null && value !== '').map(([label,value]) => `<dt>${esc(label)}</dt><dd>${esc(value)}</dd>`).join('')}</dl><details class="transaction-raw-details"><summary>Full provider data</summary><pre class="json">${esc(JSON.stringify(raw.raw_json ?? {},null,2))}</pre></details><details class="transaction-raw-details"><summary>Full stored record</summary><pre class="json">${esc(JSON.stringify(raw,null,2))}</pre></details>`;
+  openModal('transactionDetailModal');
+  document.getElementById('transactionDetailClose').focus();
+}
+function closeTransactionDetails() {
+  closeModal('transactionDetailModal');
+  transactionReturnFocus?.focus();
+}
+for (const id of ['txnSearch','txnProviderFilter','txnStatusFilter','txnCurrencyFilter','txnDateFrom','txnDateTo']) {
+  document.getElementById(id).addEventListener(id === 'txnSearch' ? 'input' : 'change', () => { transactionPage=1; renderTransactions(); });
+}
+document.querySelectorAll('[data-txn-sort]').forEach(button => button.addEventListener('click', () => {
+  const key=button.dataset.txnSort;
+  transactionSort={key,direction:transactionSort.key===key && transactionSort.direction==='asc' ? 'desc' : 'asc'};
+  transactionPage=1; renderTransactions();
+}));
+document.getElementById('txnClearFilters').addEventListener('click', () => {
+  for (const id of ['txnSearch','txnProviderFilter','txnStatusFilter','txnCurrencyFilter','txnDateFrom','txnDateTo']) document.getElementById(id).value='';
+  transactionPage=1; renderTransactions();
+});
+document.getElementById('txnPrevPage').addEventListener('click', () => { transactionPage--; renderTransactions(); });
+document.getElementById('txnNextPage').addEventListener('click', () => { transactionPage++; renderTransactions(); });
+document.getElementById('transactionDetailClose').addEventListener('click', closeTransactionDetails);
+document.getElementById('transactionDetailModal').addEventListener('click', event => { if(event.target.id==='transactionDetailModal') closeTransactionDetails(); });
+document.getElementById('transactionDetailModal').addEventListener('keydown', event => {
+  if(event.key!=='Tab') return;
+  const elements=[...document.getElementById('transactionDetailModal').querySelectorAll('button,summary')];
+  const first=elements[0], last=elements[elements.length-1];
+  if(event.shiftKey && document.activeElement===first) {event.preventDefault();last.focus();}
+  else if(!event.shiftKey && document.activeElement===last) {event.preventDefault();first.focus();}
+});
+
+function setTxnTestStatus(html, tone) {
+  const el = document.getElementById('txnTestStatus');
+  if (!el) return;
+  el.innerHTML = html;
+  el.style.color = tone === 'ok' ? 'var(--pos)' : tone === 'err' ? 'var(--neg)' : 'var(--muted)';
+}
+
+async function testPaypalConnection() {
+  const btn = document.getElementById('txnTest');
+  if (btn) { btn.disabled = true; btn.innerHTML = '<span class="spinner"></span> Testing…'; }
+  setTxnTestStatus('<span class="spinner" style="border-color:rgba(26,25,23,.2);border-top-color:var(--ink);"></span> Testing PayPal connection…');
+  try {
+    const d = await api('/api/integrations/paypal/test');
+    const msg = `PayPal OK — ${d.sampleCount} txn(s) in last 7d`;
+    setTxnTestStatus(`✓ ${esc(msg)}`, 'ok');
+    document.getElementById('txnDialogTitle').textContent = 'PayPal connection — OK';
+    document.getElementById('txnDialogBody').innerHTML =
+      `<div class="conn-ok"><span class="conn-dot"></span><div><strong>${esc(msg)}</strong><div class="small muted">Connection is active and credentials are valid.</div></div></div>` +
+      (d.sample && d.sample.length ? `<div class="lbl" style="margin:12px 0 6px;">Sample</div><pre class="json">${esc(JSON.stringify(d.sample.slice(0, 3), null, 2))}</pre>` : '');
+    openModal('txnDialog');
+    toast(msg);
+  } catch (e) {
+    setTxnTestStatus(`✕ Connection failed: ${esc(e.message)}`, 'err');
+    document.getElementById('txnDialogTitle').textContent = 'PayPal connection — Failed';
+    document.getElementById('txnDialogBody').innerHTML =
+      `<div class="conn-err"><strong>Connection test failed.</strong><div class="small" style="margin-top:6px;">${esc(e.message)}</div>
+       <div class="small muted" style="margin-top:8px;">Check PayPal settings, then retry. If you use your own Client ID &amp; Secret, re-save them on the PayPal tab.</div></div>`;
+    openModal('txnDialog');
+    toast(e.message, true);
+  } finally {
+    if (btn) { btn.disabled = false; btn.textContent = 'Test PayPal connection'; }
+  }
+}
+
+const selectedFolders = new Map();
+function renderSelectedFolders() {
+  const el = document.getElementById('selectedFolders');
+  el.replaceChildren();
+  for (const [id, name] of selectedFolders) {
+    const button = document.createElement('button');
+    button.className = 'btn btn-ghost';
+    button.textContent = name + ' ×';
+    button.setAttribute('aria-label', 'Remove ' + name);
+    button.addEventListener('click', () => {
+      selectedFolders.delete(id);
+      document.querySelectorAll('[data-folder-id]').forEach(c => { if (c.dataset.folderId === id) c.checked = false; });
+      renderSelectedFolders();
+    });
+    el.append(button);
+  }
+  if (!selectedFolders.size) el.textContent = 'No folders selected.';
+  document.getElementById('folderSaveStatus').textContent = `${selectedFolders.size} folder(s) selected. Save to apply changes.`;
+}
+function folderNode(folder, selectable = true) {
+  const node = document.createElement('li');
+  const row = document.createElement('div'); row.className = 'folder-row';
+  const toggle = document.createElement('button');
+  toggle.className = 'folder-toggle'; toggle.textContent = '▸';
+  toggle.setAttribute('aria-label', 'Expand ' + folder.name); toggle.setAttribute('aria-expanded', 'false');
+  const children = document.createElement('ul'); children.hidden = true;
+  let loaded = false;
+  toggle.addEventListener('click', async () => {
+    if (!children.hidden) {
+      children.hidden = true; toggle.textContent = '▸'; toggle.setAttribute('aria-expanded', 'false'); return;
+    }
+    children.hidden = false; toggle.textContent = '▾'; toggle.setAttribute('aria-expanded', 'true');
+    if (loaded) return;
+    toggle.disabled = true; children.textContent = 'Loading folders…';
+    try {
+      const d = await api('/api/integrations/drive/folders?parentId=' + encodeURIComponent(folder.id));
+      children.replaceChildren();
+      d.folders.forEach(f => children.append(folderNode(f)));
+      if (!d.folders.length) children.textContent = 'No subfolders';
+      loaded = true;
+    } catch (e) { children.textContent = e.message + ' — collapse and expand to retry.'; }
+    finally { toggle.disabled = false; }
+  });
+  const label = document.createElement('label'); label.className = 'folder-label';
+  if (selectable) {
+    const checkbox = document.createElement('input'); checkbox.type = 'checkbox';
+    checkbox.dataset.folderId = folder.id; checkbox.checked = selectedFolders.has(folder.id);
+    checkbox.addEventListener('change', () => {
+      if (checkbox.checked) selectedFolders.set(folder.id, folder.name); else selectedFolders.delete(folder.id);
+      document.querySelectorAll('[data-folder-id]').forEach(c => { if (c.dataset.folderId === folder.id) c.checked = checkbox.checked; });
+      renderSelectedFolders();
+    });
+    label.append(checkbox);
+  }
+  label.append(document.createTextNode('📁 ' + folder.name));
+  row.append(toggle, label); node.append(row, children); return node;
+}
+function renderFolderTree() {
+  const tree = document.getElementById('folderTree'); tree.replaceChildren();
+  const roots = document.createElement('ul');
+  roots.append(folderNode({ id: 'root', name: 'My Drive' }));
+  roots.append(folderNode({ id: 'shared', name: 'Shared with me' }, false));
+  tree.append(roots);
+  roots.querySelector('.folder-toggle').click();
+}
+async function loadDrive() {
+  try {
+    const d = await api('/api/integrations/drive/status');
+    if (d.demo) setDemoMode(true);
+    if (isDemoMode || d.demo) {
+      document.getElementById('driveStatus').textContent = 'Demo workspace — using seeded invoices. Connecting Google Drive is disabled in Demo mode.';
+      const badge = document.getElementById('driveActiveBadge');
+      badge.className = 'chip chip-warn';
+      badge.textContent = 'Demo · locked';
+      document.getElementById('folderPicker').hidden = true;
+      driveBrowserConnected = false;
+      savedDriveFolderCount = 0;
+      applyDemoLocks();
+      loadDriveFiles();
+      return;
+    }
+    document.getElementById('driveStatus').textContent = d.connected
+      ? `Connected${d.googleEmail ? ' as ' + d.googleEmail : ''}`
+      : (d.googleConfigured ? 'Connect Google Drive to choose invoice folders.' : 'Google Drive OAuth is not configured on this server.');
+    const badge = document.getElementById('driveActiveBadge');
+    badge.className = 'chip ' + (d.connected ? 'chip-pos' : 'chip-neutral');
+    badge.textContent = d.connected ? 'Connected' : 'Not connected';
+    document.getElementById('driveConnect').disabled = !d.googleConfigured;
+    document.getElementById('driveConnect').textContent = d.connected ? 'Reconnect Google Drive' : 'Connect Google Drive';
+    document.getElementById('driveDisconnect').hidden = !d.connected;
+    document.getElementById('folderPicker').hidden = !d.connected;
+    selectedFolders.clear();
+    d.folders.forEach(f => selectedFolders.set(f.id, f.name));
+    renderSelectedFolders();
+    document.getElementById('folderSaveStatus').textContent = `${d.folders.length} saved folder(s).`;
+    document.getElementById('driveFilesStatus').textContent = '';
+    driveBrowserConnected = d.connected;
+    savedDriveFolderCount = d.folders.length;
+    if (d.connected) renderFolderTree();
+    loadDriveFiles();
+  } catch (e) { document.getElementById('driveStatus').textContent = e.message; document.getElementById('driveActiveBadge').textContent = 'Couldn’t load'; }
+}
+async function loadPaypal() {
+  const badge = document.getElementById('ppActiveBadge');
+  const statusEl = document.getElementById('ppStatus');
+  const disconnectBtn = document.getElementById('ppDisconnect');
+  const connectBlock = document.getElementById('ppConnectBlock');
+  const connectedBlock = document.getElementById('ppConnectedBlock');
+  try {
+    statusEl.textContent = 'Checking connection…';
+    if (badge) badge.innerHTML = '<span class="chip chip-neutral"><span class="spinner"></span>&nbsp;Checking…</span>';
+    const p = await api('/api/integrations/paypal/status');
+    if (p.demo) setDemoMode(true);
+    if (isDemoMode || p.demo) {
+      document.getElementById('ppLookback').textContent = p.lookbackDays ? `Last ${p.lookbackDays} days` : 'Demo data';
+      if (badge) badge.innerHTML = '<span class="chip chip-warn">Demo · locked</span>';
+      statusEl.textContent = 'Demo workspace — using simulated payments. Connecting PayPal is disabled in Demo mode.';
+      disconnectBtn.hidden = true;
+      if (connectBlock) connectBlock.hidden = true;
+      if (connectedBlock) {
+        connectedBlock.hidden = false;
+        document.getElementById('ppConnectedDetail').textContent = 'Demo payments are seeded — no PayPal connection needed. Use a real account to connect your own PayPal.';
+      }
+      applyDemoLocks();
+      return;
+    }
+    document.getElementById('ppLookback').textContent = p.lookbackDays ? `Last ${p.lookbackDays} days` : 'Not available';
+    const how = p.linkType === 'credentials' ? 'client credentials' : p.linkType === 'paypal-login' ? 'PayPal login' : 'shared app connection';
+    if (p.linked) {
+      if (badge) badge.innerHTML = '<span class="chip chip-pos">● Active</span>';
+      statusEl.textContent = `Connected via ${how}${p.payerId ? ' · ' + p.payerId : ''} · syncing last ${p.lookbackDays} days`;
+      disconnectBtn.hidden = false;
+      if (connectBlock) connectBlock.hidden = true;
+      if (connectedBlock) {
+        connectedBlock.hidden = false;
+        document.getElementById('ppConnectedDetail').textContent =
+          `Connected via ${how}${p.payerId ? ' · ' + p.payerId : ''} · syncing last ${p.lookbackDays} days`;
+      }
+    } else {
+      if (badge) badge.innerHTML = '<span class="chip chip-neutral">○ Not connected</span>';
+      statusEl.textContent = p.configured
+        ? `Not connected yet — connect your account below (shared app connection available) · syncing last ${p.lookbackDays} days`
+        : 'PayPal is not available — contact your workspace admin.';
+      disconnectBtn.hidden = true;
+      if (connectBlock) connectBlock.hidden = false;
+      if (connectedBlock) connectedBlock.hidden = true;
+    }
+  } catch (e) {
+    document.getElementById('ppLookback').textContent = 'Not available';
+    statusEl.textContent = e.message;
+    if (badge) badge.innerHTML = '<span class="chip chip-neg">Connection check failed</span>';
+    disconnectBtn.hidden = true;
+    if (connectBlock) connectBlock.hidden = false;
+    if (connectedBlock) connectedBlock.hidden = true;
+  }
+}
+
+async function loadRazorpay() {
+  const badge = document.getElementById('rzActiveBadge');
+  const statusEl = document.getElementById('rzStatus');
+  const disconnectBtn = document.getElementById('rzDisconnect');
+  const connectBlock = document.getElementById('rzConnectBlock');
+  const connectedBlock = document.getElementById('rzConnectedBlock');
+  try {
+    statusEl.textContent = 'Checking connection…';
+    if (badge) badge.innerHTML = '<span class="chip chip-neutral"><span class="spinner"></span>&nbsp;Checking…</span>';
+    const p = await api('/api/integrations/razorpay/status');
+    document.getElementById('rzLookback').textContent = p.lookbackDays ? `Last ${p.lookbackDays} days` : 'Not available';
+    const how = p.linkType === 'credentials' ? 'API keys' : 'shared app connection';
+    if (p.configured) {
+      if (badge) badge.innerHTML = '<span class="chip chip-pos">● Active</span>';
+      statusEl.textContent = `Connected via ${how}${p.keyId ? ' · ' + p.keyId : ''} · syncing last ${p.lookbackDays} days`;
+      disconnectBtn.hidden = !p.linked;
+      if (connectBlock) connectBlock.hidden = true;
+      if (connectedBlock) {
+        connectedBlock.hidden = false;
+        document.getElementById('rzConnectedDetail').textContent =
+          `Connected via ${how}${p.keyId ? ' · ' + p.keyId : ''} · syncing last ${p.lookbackDays} days`;
+      }
+    } else {
+      if (badge) badge.innerHTML = '<span class="chip chip-neutral">○ Not connected</span>';
+      statusEl.textContent = p.configured
+        ? `Not connected yet — add your Key ID & Key Secret below (shared app keys available) · syncing last ${p.lookbackDays} days`
+        : 'Add your Key ID & Key Secret below to connect Razorpay.';
+      disconnectBtn.hidden = true;
+      if (connectBlock) connectBlock.hidden = false;
+      if (connectedBlock) connectedBlock.hidden = true;
+    }
+  } catch (e) {
+    document.getElementById('rzLookback').textContent = 'Not available';
+    statusEl.textContent = e.message;
+    if (badge) badge.innerHTML = '<span class="chip chip-neg">Connection check failed</span>';
+    disconnectBtn.hidden = true;
+    if (connectBlock) connectBlock.hidden = false;
+    if (connectedBlock) connectedBlock.hidden = true;
+  }
+}
+
+async function loadSync() {
+  const button = document.getElementById('saveCadence');
+  button.disabled = true;
+  try {
+    const s = await api('/api/dashboard/sync');
+    const sel = document.getElementById('cadence');
+    sel.innerHTML = s.allowedCadences.map(c => `<option value="${esc(c)}" ${c === s.cadence ? 'selected' : ''}>${c === 'none' ? 'None (manual scans only)' : 'Every ' + esc(c)}</option>`).join('');
+    const scheduled = s.cadence && s.cadence !== 'none';
+    const badge = document.getElementById('syncState');
+    badge.textContent = scheduled ? 'Scheduled' : 'Manual only';
+    badge.className = 'chip ' + (scheduled ? 'chip-pos' : 'chip-neutral');
+    document.getElementById('syncFrequency').textContent = scheduled ? `Every ${s.cadence}` : 'Manual scans only';
+    document.getElementById('syncNextRun').textContent = scheduled && s.next_run_at ? scanTime(s.next_run_at) : 'Not scheduled';
+    document.getElementById('syncLastRun').textContent = s.last_run_at ? scanTime(s.last_run_at) : 'No scheduled scans yet';
+    document.getElementById('cadenceInfo').textContent = scheduled ? 'Your schedule is saved. Choose a new frequency to change it.' : 'Recurring scans are off. Manual scans are always available.';
+    button.disabled = false;
+  } catch (e) {
+    document.getElementById('cadenceInfo').textContent = 'Couldn’t load the schedule. ' + e.message;
+    document.getElementById('syncState').textContent = 'Unavailable';
+    toast(e.message, true);
+  }
+}
+
+async function startScan() {
+  setScanButtons(true);
+  try {
+    const d = await api('/api/dashboard/scan', { method: 'POST', body: {} });
+    toast(d.message);
+    showTab('scans');
+    refreshScanStatus();
+  } catch (e) {
+    toast(e.message, true);
+    refreshScanStatus();
+  }
+}
+document.getElementById('scanBtn').addEventListener('click', startScan);
+document.getElementById('overviewScan').addEventListener('click', startScan);
+document.getElementById('overviewReview').addEventListener('click', () => {
+  document.getElementById('invFilter').value = '';
+  document.getElementById('invMatchFilter').value = overview?.matches.needs_review ? 'needs_review' : overview?.matches.unmatched ? 'unmatched' : '';
+  showTab('invoices');
+});
+document.getElementById('overviewAllInvoices').addEventListener('click', () => {
+  document.getElementById('invFilter').value = '';
+  document.getElementById('invMatchFilter').value = '';
+  showTab('invoices');
+});
+document.getElementById('overviewAllScans').addEventListener('click', () => showTab('scans'));
+document.getElementById('overviewSchedule').addEventListener('click', () => showTab('sync'));
+document.getElementById('scanNowBtn2')?.addEventListener('click', startScan);
+document.getElementById('scansReload')?.addEventListener('click', loadScans);
+document.getElementById('scanHistoryFilter').addEventListener('change', renderScanHistory);
+document.getElementById('scansViewInvoices').addEventListener('click', () => showTab('invoices'));
+document.getElementById('scansManageSync').addEventListener('click', () => showTab('sync'));
+document.getElementById('scanCancelBtn')?.addEventListener('click', async () => {
+  const btn = document.getElementById('scanCancelBtn');
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spinner"></span> Cancelling…';
+  try {
+    const d = await api('/api/dashboard/scan/cancel', { method: 'POST', body: {} });
+    toast(d.message);
+    refreshScanStatus();
+    loadScans();
+  } catch (e) { toast(e.message, true); }
+  finally { btn.disabled = false; btn.textContent = 'Cancel scan'; }
+});
+document.getElementById('logoutBtn').addEventListener('click', async () => {
+  await api('/api/auth/logout', { method: 'POST', body: {} });
+  if (sessionStorage.getItem('clerkLogin')) {
+    try { const { loadClerk } = await import('/clerk-auth.js'); const clerk = await loadClerk(); await clerk.signOut(); } catch {}
+    sessionStorage.removeItem('clerkLogin');
+  }
+  window.location.href = '/';
+});
+document.getElementById('invReload')?.addEventListener('click', loadInvoices);
+document.getElementById('invFilter')?.addEventListener('change', loadInvoices);
+document.getElementById('invMatchFilter')?.addEventListener('change', loadInvoices);
+document.getElementById('txnReload')?.addEventListener('click', loadTxns);
+document.getElementById('txnTest')?.addEventListener('click', testPaypalConnection);
+document.getElementById('txnDialogClose')?.addEventListener('click', () => closeModal('txnDialog'));
+document.getElementById('txnDialog')?.addEventListener('click', (e) => { if (e.target.id === 'txnDialog') closeModal('txnDialog'); });
+// Invoice modal wiring
+document.getElementById('invModalClose')?.addEventListener('click', () => closeModal('invoiceModal'));
+document.getElementById('invoiceModal')?.addEventListener('click', (e) => { if (e.target.id === 'invoiceModal') closeModal('invoiceModal'); });
+document.getElementById('invTabOriginal')?.addEventListener('click', () => {
+  document.getElementById('invTabOriginal').classList.add('on');
+  document.getElementById('invTabExtracted').classList.remove('on');
+  document.getElementById('invModalOriginal').hidden = false;
+  document.getElementById('invModalExtracted').hidden = true;
+});
+document.getElementById('invTabExtracted')?.addEventListener('click', () => {
+  document.getElementById('invTabExtracted').classList.add('on');
+  document.getElementById('invTabOriginal').classList.remove('on');
+  document.getElementById('invModalExtracted').hidden = false;
+  document.getElementById('invModalOriginal').hidden = true;
+});
+document.getElementById('invZoomIn')?.addEventListener('click', () => setInvZoom(invZoom + 0.25));
+document.getElementById('invZoomOut')?.addEventListener('click', () => setInvZoom(invZoom - 0.25));
+document.getElementById('invZoomReset')?.addEventListener('click', () => setInvZoom(1));
+// Drive viewer wiring
+document.getElementById('driveModalClose')?.addEventListener('click', () => closeModal('driveModal'));
+document.getElementById('driveModal')?.addEventListener('click', (e) => { if (e.target.id === 'driveModal') closeModal('driveModal'); });
+document.getElementById('driveZoomIn')?.addEventListener('click', () => setDriveZoom(driveZoom + 0.25));
+document.getElementById('driveZoomOut')?.addEventListener('click', () => setDriveZoom(driveZoom - 0.25));
+document.getElementById('driveZoomReset')?.addEventListener('click', () => setDriveZoom(1));
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'Escape') { if (!document.getElementById('transactionDetailModal').hidden) closeTransactionDetails(); closeModal('invoiceModal'); closeModal('driveModal'); closeModal('txnDialog'); }
+});
+document.getElementById('saveFolder').addEventListener('click', async () => {
+  if (isDemoMode) { toast('Not available in Demo mode — demo uses seeded invoices.', true); return; }
+  const button = document.getElementById('saveFolder'); button.disabled = true;
+  try {
+    const d = await api('/api/integrations/drive/folders', { method: 'PUT', body: { folderIds: [...selectedFolders.keys()] } });
+    selectedFolders.clear(); d.folders.forEach(f => selectedFolders.set(f.id, f.name)); renderSelectedFolders();
+    document.getElementById('folderSaveStatus').textContent = `${d.folders.length} folder(s) saved.`;
+    document.getElementById('driveFilesStatus').textContent = '';
+    savedDriveFolderCount = d.folders.length;
+    loadDriveFiles();
+    toast('Invoice folders saved');
+  } catch (e) { toast(e.message, true); }
+  finally { button.disabled = false; }
+});
+document.getElementById('refreshFolders').addEventListener('click', renderFolderTree);
+document.getElementById('driveDisconnect').addEventListener('click', async () => {
+  if (isDemoMode) { toast('Not available in Demo mode — demo uses seeded invoices.', true); return; }
+  try { await api('/api/integrations/drive/disconnect', { method: 'DELETE' }); await loadDrive(); toast('Google Drive disconnected'); }
+  catch (e) { toast(e.message, true); }
+});
+document.getElementById('driveConnect')?.addEventListener('click', async (e) => {
+  if (isDemoMode) { e.preventDefault(); toast('Not available in Demo mode — demo uses seeded invoices.', true); return; }
+  const btn = e.currentTarget;
+  btn.disabled = true;
+  const original = btn.textContent;
+  btn.innerHTML = '<span class="spinner"></span> Connecting…';
+  try { const d = await api('/api/integrations/drive/connect-url'); window.location.href = d.url; }
+  catch (e2) { toast(e2.message, true); btn.disabled = false; btn.textContent = original; }
+});
+// --- Drive preview grid + large viewer (images zoomable, PDFs native) ---
+let driveZoom = 1;
+let driveFilesCache = [];
+function setDriveZoom(v) {
+  driveZoom = Math.min(3, Math.max(0.25, v));
+  document.getElementById('driveZoomLabel').textContent = Math.round(driveZoom * 100) + '%';
+  const img = document.querySelector('#driveModalStage img.zoom-img');
+  if (img) img.style.transform = `scale(${driveZoom})`;
+}
+function drivePreviewUrl(file) {
+  return `/api/integrations/drive/files/${encodeURIComponent(file.id)}/content`;
+}
+function openDriveFileModal(file) {
+  openModal('driveModal');
+  document.getElementById('driveModalTitle').textContent = file.name || 'File preview';
+  document.getElementById('driveModalSub').textContent = file.mimeType || '';
+  const stage = document.getElementById('driveModalStage');
+  const toolbar = document.getElementById('driveImgToolbar');
+  const url = drivePreviewUrl(file);
+  const mime = String(file.mimeType || '');
+  driveZoom = 1;
+  document.getElementById('driveZoomLabel').textContent = '100%';
+  loadFilePreview({ stage, toolbar, url, mime, name: file.name || 'File preview' });
+}
+let driveFilesRequest = 0;
+let driveBrowserConnected = false;
+let savedDriveFolderCount = 0;
+async function loadDriveFiles() {
+  const request = ++driveFilesRequest;
+  const btn = document.getElementById('driveFiles');
+  const statusEl = document.getElementById('driveBrowserStatus');
+  const gridEl = document.getElementById('driveFilesGrid');
+  if (!driveBrowserConnected || !savedDriveFolderCount) {
+    driveFilesCache = [];
+    btn.disabled = true;
+    btn.textContent = 'Refresh files';
+    gridEl.removeAttribute('aria-busy');
+    if (isDemoMode) {
+      statusEl.textContent = 'File browser is disabled in Demo mode.';
+      gridEl.innerHTML = '<div class="collection-empty"><strong>Not available in Demo mode</strong><p>Demo uses seeded invoices. Open the Invoices tab to review them.</p></div>';
+      return;
+    }
+    statusEl.textContent = driveBrowserConnected ? 'Save folder selections to browse their files.' : 'Connect Google Drive to browse your files.';
+    gridEl.innerHTML = `<div class="collection-empty"><strong>${driveBrowserConnected ? 'Choose your invoice folders' : 'Your files will appear here'}</strong><p>${driveBrowserConnected ? 'Select folders on the left and save your choices.' : 'Connect Google Drive and save your folder selections on the left.'}</p></div>`;
+    return;
+  }
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spinner"></span> Loading…';
+  statusEl.textContent = 'Loading files from saved folders and subfolders…';
+  gridEl.setAttribute('aria-busy', 'true');
+  gridEl.innerHTML = '<div class="empty"><span class="spinner"></span> Loading invoice files…</div>';
+  try {
+    const d = await api('/api/integrations/drive/files');
+    if (request !== driveFilesRequest) return;
+    driveFilesCache = d.files || [];
+    if (!driveFilesCache.length) {
+      statusEl.textContent = 'No files found in your saved folders.';
+      gridEl.innerHTML = '<div class="collection-empty"><strong>No invoice files yet</strong><p>Add PDFs or images to your saved folders, then refresh.</p></div>';
+      document.getElementById('driveFilesStatus').textContent = 'No image or PDF files in your saved folders.';
+      return;
+    }
+    statusEl.textContent = `${driveFilesCache.length} file${driveFilesCache.length === 1 ? '' : 's'} · click a file to preview it.`;
+    document.getElementById('driveFilesStatus').textContent = `${driveFilesCache.length} file${driveFilesCache.length === 1 ? '' : 's'} available in the browser.`;
+    gridEl.replaceChildren();
+    driveFilesCache.forEach(f => {
+      const card = document.createElement('button');
+      card.className = 'file-card';
+      card.setAttribute('aria-label', 'Preview ' + f.name);
+      const mime = String(f.mimeType || '');
+      const isPdf = mime === 'application/pdf';
+      card.innerHTML = `<span class="file-thumb drive-thumbnail" aria-busy="true"><span class="thumbnail-loader" role="status"><span class="spinner" aria-hidden="true"></span><span>Loading preview…</span></span></span><span class="file-name" title="${esc(f.name)}">${esc(f.name)}</span><span class="file-meta muted">${isPdf ? 'PDF document' : 'Image'}${f.size ? ' · ' + esc(formatFileSize(f.size)) : ''}</span>`;
+      const thumb=card.querySelector('.file-thumb');
+      const image=document.createElement('img');
+      image.alt='Preview of '+f.name;
+      image.loading='lazy'; image.decoding='async';
+      image.onload=()=>{ image.classList.add('is-loaded'); thumb.querySelector('.thumbnail-loader')?.remove(); thumb.removeAttribute('aria-busy'); };
+      image.onerror=()=>{ image.remove(); thumb.removeAttribute('aria-busy'); thumb.innerHTML='<span class="thumbnail-fallback">Preview unavailable<br><span>Click to open</span></span>'; };
+      image.src=`/api/integrations/drive/files/${encodeURIComponent(f.id)}/thumbnail`;
+      thumb.append(image);
+      card.addEventListener('click', () => openDriveFileModal(f));
+      gridEl.append(card);
+    });
+  } catch (e) {
+    if (request !== driveFilesRequest) return;
+    statusEl.textContent = 'Couldn’t load files. Refresh to try again.';
+    gridEl.innerHTML = `<div class="collection-empty"><strong>Files couldn’t be loaded</strong><p>${esc(e.message)}</p></div>`;
+    toast(e.message, true);
+  } finally {
+    if (request === driveFilesRequest) {
+      gridEl.removeAttribute('aria-busy');
+      btn.disabled = false;
+      btn.textContent = 'Refresh files';
+    }
+  }
+}
+function formatFileSize(size) {
+  const bytes = Number(size);
+  if (!Number.isFinite(bytes) || bytes < 0) return 'Unknown size';
+  return bytes >= 1024 * 1024 ? (bytes / (1024 * 1024)).toFixed(1) + ' MB' : bytes >= 1024 ? Math.round(bytes / 1024) + ' KB' : bytes + ' B';
+}
+document.getElementById('driveFiles').addEventListener('click', loadDriveFiles);
+document.getElementById('savePp')?.addEventListener('click', async () => {
+  if (isDemoMode) { toast('Not available in Demo mode — demo uses simulated payments.', true); return; }
+  const btn = document.getElementById('savePp');
+  const statusEl = document.getElementById('ppSaveStatus');
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spinner"></span> Saving…';
+  if (statusEl) statusEl.textContent = 'Saving and testing connection…';
+  try {
+    await api('/api/integrations/paypal/credentials', { method: 'PUT', body: { clientId: document.getElementById('ppId').value, clientSecret: document.getElementById('ppSecret').value, mode: 'sandbox' } });
+    document.getElementById('ppSecret').value = '';
+    if (statusEl) statusEl.textContent = 'Credentials saved. Testing connection…';
+    btn.innerHTML = '<span class="spinner"></span> Testing…';
+    const t = await api('/api/integrations/paypal/test');
+    if (statusEl) { statusEl.textContent = `Connected — ${t.sampleCount} transaction(s) in last 7d.`; statusEl.style.color = 'var(--pos)'; }
+    toast(`Saved. PayPal OK — ${t.sampleCount} transactions in last 7d`);
+    loadPaypal();
+  } catch (e) {
+    if (statusEl) { statusEl.textContent = e.message; statusEl.style.color = 'var(--neg)'; }
+    toast(e.message, true);
+  } finally {
+    btn.disabled = false;
+    btn.textContent = 'Save & test';
+  }
+});
+document.getElementById('ppConnect')?.addEventListener('click', (e) => {
+  if (isDemoMode) { e.preventDefault(); toast('Not available in Demo mode — demo uses simulated payments.', true); return; }
+  const link = e.currentTarget;
+  link.innerHTML = '<span class="spinner"></span> Connecting…';
+});
+document.getElementById('ppDisconnect')?.addEventListener('click', async (e) => {
+  if (isDemoMode) { toast('Not available in Demo mode — demo uses simulated payments.', true); return; }
+  const btn = e.currentTarget;
+  btn.disabled = true;
+  const original = btn.textContent;
+  btn.innerHTML = '<span class="spinner"></span> Disconnecting…';
+  try {
+    await api('/api/integrations/paypal/disconnect', { method: 'DELETE' });
+    toast('PayPal account disconnected'); loadPaypal(); refreshOverview();
+  } catch (err) { toast(err.message, true); }
+  finally { btn.disabled = false; btn.textContent = original; }
+});
+document.getElementById('saveRz')?.addEventListener('click', async () => {
+  const btn = document.getElementById('saveRz');
+  const statusEl = document.getElementById('rzSaveStatus');
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spinner"></span> Saving…';
+  if (statusEl) statusEl.textContent = 'Saving and testing connection…';
+  try {
+    await api('/api/integrations/razorpay/credentials', { method: 'PUT', body: { keyId: document.getElementById('rzId').value, keySecret: document.getElementById('rzSecret').value } });
+    document.getElementById('rzSecret').value = '';
+    if (statusEl) statusEl.textContent = 'Credentials saved. Testing connection…';
+    btn.innerHTML = '<span class="spinner"></span> Testing…';
+    const t = await api('/api/integrations/razorpay/test');
+    if (statusEl) { statusEl.textContent = `Connected — ${t.sampleCount} payment(s) in last 7d.`; statusEl.style.color = 'var(--pos)'; }
+    toast(`Saved. Razorpay OK — ${t.sampleCount} payments in last 7d`);
+    loadRazorpay();
+  } catch (e) {
+    if (statusEl) { statusEl.textContent = e.message; statusEl.style.color = 'var(--neg)'; }
+    toast(e.message, true);
+  } finally {
+    btn.disabled = false;
+    btn.textContent = 'Save & test';
+  }
+});
+document.getElementById('rzDisconnect')?.addEventListener('click', async (e) => {
+  const btn = e.currentTarget;
+  btn.disabled = true;
+  const original = btn.textContent;
+  btn.innerHTML = '<span class="spinner"></span> Disconnecting…';
+  try {
+    await api('/api/integrations/razorpay/disconnect', { method: 'DELETE' });
+    toast('Razorpay account disconnected'); loadRazorpay(); refreshOverview();
+  } catch (err) { toast(err.message, true); }
+  finally { btn.disabled = false; btn.textContent = original; }
+});
+document.getElementById('saveCadence')?.addEventListener('click', async () => {
+  const button = document.getElementById('saveCadence');
+  button.disabled = true;
+  button.textContent = 'Saving…';
+  try {
+    const d = await api('/api/dashboard/sync', { method: 'PUT', body: { cadence: document.getElementById('cadence').value } });
+    toast('Schedule saved: ' + d.cadence);
+    await loadSync();
+    refreshOverview();
+  } catch (e) { toast(e.message, true); }
+  finally { button.textContent = 'Save schedule'; button.disabled = document.getElementById('cadence').options.length === 0; }
+});
+
+boot();
+</script>
+</body>
+</html>

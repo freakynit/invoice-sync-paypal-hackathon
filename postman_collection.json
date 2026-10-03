@@ -1,0 +1,189 @@
+{
+  "info": {
+    "name": "Invoice Sync — PayPal AI Hackathon",
+    "description": "Full API collection for judges. Start with `Demo — one-click login (no keys)` then explore AG Grid data sources (Invoices/Transactions), the agentic chat (Best Use of PayPal + AI / Agentic Commerce), Pay Now (PayPal order/payout), AI explanations, and the Zapier scan-complete webhook.\n\nAuth uses an HttpOnly session cookie (`invoice_sync_session`). In Postman, enable cookie jar so login persists across requests. Base URL defaults to http://localhost:3000.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    { "key": "baseUrl", "value": "http://localhost:3000" },
+    { "key": "invoiceId", "value": "" },
+    { "key": "orderId", "value": "" }
+  ],
+  "item": [
+    {
+      "name": "00 Demo mode (judges start here)",
+      "item": [
+        {
+          "name": "Demo — one-click login (no keys)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": "{{baseUrl}}/api/auth/demo",
+            "body": { "mode": "raw", "raw": "{}" },
+            "description": "Creates/seeds the demo workspace (12 invoices, 8 payments, matches) and sets the session cookie. No PayPal/Drive/Clerk keys needed."
+          }
+        },
+        {
+          "name": "Demo — reset seeded data",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": "{{baseUrl}}/api/auth/demo/reset",
+            "body": { "mode": "raw", "raw": "{}" }
+          }
+        },
+        {
+          "name": "Auth — public config (demo/chat flags)",
+          "request": { "method": "GET", "url": "{{baseUrl}}/api/auth/config" }
+        },
+        {
+          "name": "Auth — me (isDemo, chat model)",
+          "request": { "method": "GET", "url": "{{baseUrl}}/api/auth/me" }
+        }
+      ]
+    },
+    {
+      "name": "01 Auth",
+      "item": [
+        {
+          "name": "Signup",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": "{{baseUrl}}/api/auth/signup",
+            "body": { "mode": "raw", "raw": "{\n  \"name\": \"Judge\",\n  \"email\": \"judge@example.com\",\n  \"password\": \"judge-password-123\"\n}" }
+          }
+        },
+        {
+          "name": "Login",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": "{{baseUrl}}/api/auth/login",
+            "body": { "mode": "raw", "raw": "{\n  \"email\": \"judge@example.com\",\n  \"password\": \"judge-password-123\"\n}" }
+          }
+        },
+        { "name": "Logout", "request": { "method": "POST", "header": [{ "key": "Content-Type", "value": "application/json" }], "url": "{{baseUrl}}/api/auth/logout", "body": { "mode": "raw", "raw": "{}" } } }
+      ]
+    },
+    {
+      "name": "02 Dashboard — AG Grid data sources",
+      "item": [
+        { "name": "Overview (matches, attention, totals)", "request": { "method": "GET", "url": "{{baseUrl}}/api/dashboard/overview" } },
+        {
+          "name": "Invoices — AG Grid source (all)",
+          "request": { "method": "GET", "url": "{{baseUrl}}/api/dashboard/invoices?limit=100" },
+          "event": [{ "listen": "test", "script": { "exec": ["if (pm.response.json().invoices?.[0]?.id) { pm.collectionVariables.set('invoiceId', pm.response.json().invoices[0].id); }"] } }]
+        },
+        { "name": "Invoices — unmatched only", "request": { "method": "GET", "url": "{{baseUrl}}/api/dashboard/invoices?match_status=unmatched&limit=100" } },
+        { "name": "Invoices — needs review", "request": { "method": "GET", "url": "{{baseUrl}}/api/dashboard/invoices?match_status=needs_review&limit=100" } },
+        { "name": "Invoice detail", "request": { "method": "GET", "url": "{{baseUrl}}/api/dashboard/invoices/{{invoiceId}}" } },
+        { "name": "Invoice candidates (ranked payments)", "request": { "method": "GET", "url": "{{baseUrl}}/api/dashboard/invoices/{{invoiceId}}/candidates" } },
+        { "name": "Matches (all, top 200)", "request": { "method": "GET", "url": "{{baseUrl}}/api/dashboard/matches" } },
+        { "name": "Scan status + history", "request": { "method": "GET", "url": "{{baseUrl}}/api/dashboard/scan/status" } },
+        {
+          "name": "Scan now (background)",
+          "request": { "method": "POST", "header": [{ "key": "Content-Type", "value": "application/json" }], "url": "{{baseUrl}}/api/dashboard/scan", "body": { "mode": "raw", "raw": "{}" } }
+        }
+      ]
+    },
+    {
+      "name": "03 Agentic chat (PayPal + AI, Agentic Commerce)",
+      "item": [
+        { "name": "Chat status (model)", "request": { "method": "GET", "url": "{{baseUrl}}/api/dashboard/chat/status" } },
+        {
+          "name": "Chat — Which Acme invoices are overdue?",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": "{{baseUrl}}/api/dashboard/chat",
+            "body": { "mode": "raw", "raw": "{\n  \"message\": \"Which Acme invoices are overdue?\"\n}" }
+          }
+        },
+        {
+          "name": "Chat — Show unmatched invoices",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": "{{baseUrl}}/api/dashboard/chat",
+            "body": { "mode": "raw", "raw": "{\n  \"message\": \"Show unmatched invoices\"\n}" }
+          }
+        },
+        {
+          "name": "Chat — Flag duplicates/overpayments/currency conflicts",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": "{{baseUrl}}/api/dashboard/chat",
+            "body": { "mode": "raw", "raw": "{\n  \"message\": \"Flag duplicates, overpayments and currency conflicts\"\n}" }
+          }
+        }
+      ]
+    },
+    {
+      "name": "04 AI explanations + Pay Now",
+      "item": [
+        { "name": "Explain match (Matched NN% because … / Flagged …)", "request": { "method": "GET", "url": "{{baseUrl}}/api/dashboard/invoices/{{invoiceId}}/explanation" } },
+        {
+          "name": "Pay Now — create PayPal order",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": "{{baseUrl}}/api/dashboard/invoices/{{invoiceId}}/pay",
+            "body": { "mode": "raw", "raw": "{\n  \"method\": \"order\"\n}" }
+          },
+          "event": [{ "listen": "test", "script": { "exec": ["var j = pm.response.json(); if (j.orderId) { pm.collectionVariables.set('orderId', j.orderId); }"] } }]
+        },
+        {
+          "name": "Pay Now — capture order",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": "{{baseUrl}}/api/dashboard/invoices/{{invoiceId}}/pay/capture",
+            "body": { "mode": "raw", "raw": "{\n  \"orderId\": \"{{orderId}}\"\n}" }
+          }
+        },
+        {
+          "name": "Pay Now — payout (direct)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": "{{baseUrl}}/api/dashboard/invoices/{{invoiceId}}/pay",
+            "body": { "mode": "raw", "raw": "{\n  \"method\": \"payout\",\n  \"receiverEmail\": \"vendor@example.com\"\n}" }
+          }
+        },
+        { "name": "Pay Now — order history (invoice)", "request": { "method": "GET", "url": "{{baseUrl}}/api/dashboard/invoices/{{invoiceId}}/pay/orders" } },
+        { "name": "Pay Now — order history (all)", "request": { "method": "GET", "url": "{{baseUrl}}/api/dashboard/pay/orders" } }
+      ]
+    },
+    {
+      "name": "05 Zapier webhook (scan-complete)",
+      "item": [
+        { "name": "Get webhook config", "request": { "method": "GET", "url": "{{baseUrl}}/api/dashboard/webhook" } },
+        {
+          "name": "Save webhook (Zapier Catch Hook URL)",
+          "request": {
+            "method": "PUT",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": "{{baseUrl}}/api/dashboard/webhook",
+            "body": { "mode": "raw", "raw": "{\n  \"url\": \"https://hooks.zapier.com/hooks/catch/123/abc\",\n  \"enabled\": true\n}" }
+          }
+        },
+        {
+          "name": "Send test event",
+          "request": { "method": "POST", "header": [{ "key": "Content-Type", "value": "application/json" }], "url": "{{baseUrl}}/api/dashboard/webhook/test", "body": { "mode": "raw", "raw": "{}" } }
+        }
+      ]
+    },
+    {
+      "name": "06 PayPal + Drive integrations",
+      "item": [
+        { "name": "PayPal status", "request": { "method": "GET", "url": "{{baseUrl}}/api/integrations/paypal/status" } },
+        { "name": "PayPal transactions (AG Grid source)", "request": { "method": "GET", "url": "{{baseUrl}}/api/integrations/paypal/transactions?limit=50&offset=0" } },
+        { "name": "PayPal connection test", "request": { "method": "GET", "url": "{{baseUrl}}/api/integrations/paypal/test" } },
+        { "name": "Drive status", "request": { "method": "GET", "url": "{{baseUrl}}/api/integrations/drive/status" } },
+        { "name": "Health", "request": { "method": "GET", "url": "{{baseUrl}}/api/health" } }
+      ]
+    }
+  ]
+}

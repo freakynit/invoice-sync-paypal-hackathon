@@ -1,0 +1,353 @@
+{
+  "run": "MATCH-1790999818886",
+  "completedAt": "2026-10-03T04:09:23.143Z",
+  "importedForUser": "9108260e-5a96-42e9-95a7-9f125c882734",
+  "paymentStatuses": {
+    "COMPLETED": 14,
+    "DECLINED": 1
+  },
+  "expectedInvoiceStatuses": {
+    "matched": 5,
+    "needs_review": 9,
+    "unmatched": 3
+  },
+  "cases": [
+    {
+      "fileName": "match-1790999818886-01-exact-invoice-receipt.png",
+      "style": "receipt",
+      "bytes": 60206,
+      "case": "exact-invoice",
+      "expected": "matched",
+      "reason": "Structured invoice number, exact total and currency; absent email is allowed.",
+      "invoice": {
+        "invoice_number": "MATCH-1790999818886-01",
+        "vendor_name": "Brightline Systems",
+        "amount": 11.13,
+        "currency": "USD",
+        "invoice_date": "2026-10-03",
+        "payer_email": null,
+        "due_date": "2026-10-17"
+      },
+      "paymentIds": [
+        "3NW819267G615051T"
+      ]
+    },
+    {
+      "fileName": "match-1790999818886-02-custom-id-minimal.png",
+      "style": "minimal",
+      "bytes": 85833,
+      "case": "custom-id",
+      "expected": "matched",
+      "reason": "Exact invoice-sync custom identifier, amount and currency.",
+      "invoice": {
+        "invoice_number": "MATCH-1790999818886-02",
+        "vendor_name": "Harbor Paper Goods",
+        "amount": 12.26,
+        "currency": "USD",
+        "invoice_date": "2026-10-03",
+        "payer_email": null,
+        "due_date": "2026-10-17"
+      },
+      "paymentIds": [
+        "6XF242314U308735X"
+      ]
+    },
+    {
+      "fileName": "match-1790999818886-03-description-only-ledger.png",
+      "style": "ledger",
+      "bytes": 85297,
+      "case": "description-only",
+      "expected": "needs_review",
+      "reason": "Description mention has no strong identifier or matching payer email.",
+      "invoice": {
+        "invoice_number": "MATCH-1790999818886-03",
+        "vendor_name": "Kite & Key Design",
+        "amount": 13.39,
+        "currency": "USD",
+        "invoice_date": "2026-10-03",
+        "payer_email": null,
+        "due_date": "2026-10-17"
+      },
+      "paymentIds": [
+        "8EA49212AB840061H"
+      ]
+    },
+    {
+      "fileName": "match-1790999818886-04-amount-tolerance-modern.png",
+      "style": "modern",
+      "bytes": 92324,
+      "case": "amount-tolerance",
+      "expected": "matched",
+      "reason": "One cent difference is inside the configured amount tolerance.",
+      "invoice": {
+        "invoice_number": "MATCH-1790999818886-04",
+        "vendor_name": "Cedar Peak Consulting",
+        "amount": 14.53,
+        "currency": "USD",
+        "invoice_date": "2026-10-03",
+        "payer_email": null,
+        "due_date": "2026-10-17"
+      },
+      "paymentIds": [
+        "09M15701S78367225"
+      ]
+    },
+    {
+      "fileName": "match-1790999818886-05-near-amount-classic.png",
+      "style": "classic",
+      "bytes": 92317,
+      "case": "near-amount",
+      "expected": "needs_review",
+      "reason": "50 cent total difference requires manual review.",
+      "invoice": {
+        "invoice_number": "MATCH-1790999818886-05",
+        "vendor_name": "Morrow Cloud Services",
+        "amount": 16.15,
+        "currency": "USD",
+        "invoice_date": "2026-10-03",
+        "payer_email": null,
+        "due_date": "2026-10-17"
+      },
+      "paymentIds": [
+        "5GD02049AK575491W"
+      ]
+    },
+    {
+      "fileName": "match-1790999818886-06-partial-payment-receipt.png",
+      "style": "receipt",
+      "bytes": 59372,
+      "case": "partial-payment",
+      "expected": "needs_review",
+      "reason": "Invoice total is twice the captured payment.",
+      "invoice": {
+        "invoice_number": "MATCH-1790999818886-06",
+        "vendor_name": "Fieldnote Supply",
+        "amount": 33.56,
+        "currency": "USD",
+        "invoice_date": "2026-10-03",
+        "payer_email": null,
+        "due_date": "2026-10-17"
+      },
+      "paymentIds": [
+        "58065594T1312493F"
+      ]
+    },
+    {
+      "fileName": "match-1790999818886-07-overpayment-modern.png",
+      "style": "modern",
+      "bytes": 86279,
+      "case": "overpayment",
+      "expected": "needs_review",
+      "reason": "Payment exceeds the invoice total.",
+      "invoice": {
+        "invoice_number": "MATCH-1790999818886-07",
+        "vendor_name": "Northstar Studio",
+        "amount": 8.91,
+        "currency": "USD",
+        "invoice_date": "2026-10-03",
+        "payer_email": null,
+        "due_date": "2026-10-17"
+      },
+      "paymentIds": [
+        "0MN48356897056535"
+      ]
+    },
+    {
+      "fileName": "match-1790999818886-08-currency-conflict-classic.png",
+      "style": "classic",
+      "bytes": 83816,
+      "case": "currency-conflict",
+      "expected": "needs_review",
+      "reason": "USD capture versus EUR invoice.",
+      "invoice": {
+        "invoice_number": "MATCH-1790999818886-08",
+        "vendor_name": "Juniper & Co.",
+        "amount": 19.04,
+        "currency": "EUR",
+        "invoice_date": "2026-10-03",
+        "payer_email": null,
+        "due_date": "2026-10-17"
+      },
+      "paymentIds": [
+        "3N143954RV146890J"
+      ]
+    },
+    {
+      "fileName": "match-1790999818886-09-invoice-number-conflict-receipt.png",
+      "style": "receipt",
+      "bytes": 61807,
+      "case": "invoice-number-conflict",
+      "expected": "needs_review",
+      "reason": "Exact custom identifier but conflicting structured invoice number.",
+      "invoice": {
+        "invoice_number": "MATCH-1790999818886-09",
+        "vendor_name": "Brightline Systems",
+        "amount": 20.17,
+        "currency": "USD",
+        "invoice_date": "2026-10-03",
+        "payer_email": null,
+        "due_date": "2026-10-17"
+      },
+      "paymentIds": [
+        "374993089W169343D"
+      ]
+    },
+    {
+      "fileName": "match-1790999818886-10-ambiguous-payments-minimal.png",
+      "style": "minimal",
+      "bytes": 85918,
+      "case": "ambiguous-payments",
+      "expected": "needs_review",
+      "reason": "Two equally strong completed payments; choose manually.",
+      "invoice": {
+        "invoice_number": "MATCH-1790999818886-10",
+        "vendor_name": "Harbor Paper Goods",
+        "amount": 21.3,
+        "currency": "USD",
+        "invoice_date": "2026-10-03",
+        "payer_email": null,
+        "due_date": "2026-10-17"
+      },
+      "paymentIds": [
+        "7XV91743WF3015115",
+        "9KM45117AH995291C"
+      ]
+    },
+    {
+      "fileName": "match-1790999818886-11-old-date-with-identifier-ledger.png",
+      "style": "ledger",
+      "bytes": 85708,
+      "case": "old-date-with-identifier",
+      "expected": "matched",
+      "reason": "Exact structured identifier can match outside the date tolerance.",
+      "invoice": {
+        "invoice_number": "MATCH-1790999818886-11",
+        "vendor_name": "Kite & Key Design",
+        "amount": 22.43,
+        "currency": "USD",
+        "invoice_date": "2026-09-16",
+        "payer_email": null,
+        "due_date": "2026-09-30"
+      },
+      "paymentIds": [
+        "1LP08233TY954271R"
+      ]
+    },
+    {
+      "fileName": "match-1790999818886-12-unpaid-modern.png",
+      "style": "modern",
+      "bytes": 95497,
+      "case": "unpaid",
+      "expected": "unmatched",
+      "reason": "No payment; a unique high total and old date avoid weak nearby candidates.",
+      "invoice": {
+        "invoice_number": "MATCH-1790999818886-12",
+        "vendor_name": "Cedar Peak Consulting",
+        "amount": 9876.54,
+        "currency": "USD",
+        "invoice_date": "2025-01-01",
+        "payer_email": null,
+        "due_date": "2025-01-15"
+      },
+      "paymentIds": []
+    },
+    {
+      "fileName": "match-1790999818886-13-unapproved-order-classic.png",
+      "style": "classic",
+      "bytes": 93825,
+      "case": "unapproved-order",
+      "expected": "unmatched",
+      "reason": "Created order has no capture and is not a completed transaction.",
+      "invoice": {
+        "invoice_number": "MATCH-1790999818886-13",
+        "vendor_name": "Morrow Cloud Services",
+        "amount": 24.69,
+        "currency": "USD",
+        "invoice_date": "2026-10-03",
+        "payer_email": null,
+        "due_date": "2026-10-17"
+      },
+      "paymentIds": []
+    },
+    {
+      "fileName": "match-1790999818886-14-declined-card-receipt.png",
+      "style": "receipt",
+      "bytes": 58381,
+      "case": "declined-card",
+      "expected": "unmatched",
+      "reason": "PayPal sandbox rejection trigger produces no eligible completed payment.",
+      "invoice": {
+        "invoice_number": "MATCH-1790999818886-14",
+        "vendor_name": "Fieldnote Supply",
+        "amount": 25.82,
+        "currency": "USD",
+        "invoice_date": "2026-10-03",
+        "payer_email": null,
+        "due_date": "2026-10-17"
+      },
+      "paymentIds": [
+        "4FC35781GH801180X"
+      ]
+    },
+    {
+      "fileName": "match-1790999818886-15-missing-email-and-due-date-modern.png",
+      "style": "modern",
+      "bytes": 82059,
+      "case": "missing-email-and-due-date",
+      "expected": "matched",
+      "reason": "Optional invoice fields do not prevent a strong structured match.",
+      "invoice": {
+        "invoice_number": "MATCH-1790999818886-15",
+        "vendor_name": "Northstar Studio",
+        "amount": 26.95,
+        "currency": "USD",
+        "invoice_date": "2026-10-03",
+        "payer_email": null,
+        "due_date": null
+      },
+      "paymentIds": [
+        "32E828543X0858207"
+      ]
+    },
+    {
+      "fileName": "match-1790999818886-16-shared-payment-first-classic.png",
+      "style": "classic",
+      "bytes": 87176,
+      "case": "shared-payment-first",
+      "expected": "needs_review",
+      "reason": "Two invoices compete for the same payment; one payment can only be assigned once.",
+      "invoice": {
+        "invoice_number": "MATCH-1790999818886-16",
+        "vendor_name": "Juniper & Co.",
+        "amount": 28.08,
+        "currency": "USD",
+        "invoice_date": "2026-10-03",
+        "payer_email": null,
+        "due_date": "2026-10-17"
+      },
+      "paymentIds": [
+        "4CG57153K8224725U"
+      ]
+    },
+    {
+      "fileName": "match-1790999818886-16-shared-payment-second-receipt.png",
+      "style": "receipt",
+      "bytes": 62912,
+      "case": "shared-payment-second",
+      "expected": "needs_review",
+      "reason": "Two invoices compete for the same payment; one payment can only be assigned once.",
+      "invoice": {
+        "invoice_number": "MATCH-1790999818886-16",
+        "vendor_name": "Brightline Systems",
+        "amount": 28.08,
+        "currency": "USD",
+        "invoice_date": "2026-10-03",
+        "payer_email": null,
+        "due_date": "2026-10-17"
+      },
+      "paymentIds": [
+        "4CG57153K8224725U"
+      ]
+    }
+  ]
+}

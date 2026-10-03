@@ -1,0 +1,181 @@
+# Invoice Sync — central configuration.
+# Every value can be overridden with an environment variable using "" or "default".
+# .env file is loaded first (see src/config.ts), then YAML interpolation happens.
+
+app:
+  name: "Invoice Sync"
+  env: "development"
+  publicBaseUrl: "https://some-proxy-domain.com"
+  simulateEmailSending: false
+
+server:
+  # Enable when all traffic passes through this many trusted proxies.
+  trustProxy:
+    enabled: ${TRUST_PROXY_ENABLED:-false}
+    level: ${TRUST_PROXY_LEVEL:-1}
+  port: 3000
+  host: "0.0.0.0"
+  sessionCookieName: "invoice_sync_session"
+  corsOrigins: "http://localhost:3000,https://some-proxy-domain.com"
+
+db:
+  host: "localhost"
+  port: 5432
+  database: "invoice_sync"
+  user: ${PGUSER:-}
+  password: ${PGPASSWORD:-}
+  maxPool: 10
+  idleTimeoutMs: 30000
+
+auth:
+  jwtSecret: ${JWT_SECRET:-}
+  jwtExpiresIn: "7d"
+  bcryptRounds: 10
+  rateLimit:
+    windowMs: 900000
+    loginMax: 20
+    emailMax: 5
+  verificationTokenTtlHours: 24
+  resetTokenTtlHours: 1
+  google:
+    clientId: ${GOOGLE_CLIENT_ID:-}
+    clientSecret: ${GOOGLE_CLIENT_SECRET:-}
+    redirectUri: "http://localhost:3000/api/auth/google/callback"
+
+clerk:
+  publishableKey: ${CLERK_PUBLISHABLE_KEY:-}
+  secretKey: ${CLERK_SECRET_KEY:-}
+
+mail:
+  fromEmail: "contact@jerrysniffs.online"
+  fromName: "Invoice Sync"
+  concurrency: 2
+  sentFolderName: "Sent"
+  pollIntervalMs: 5000
+  batchSize: 10
+  maxAttempts: 8
+  processingTimeoutMs: 600000
+  validation:
+    apiKey: ${MAIL_VALIDATION_API_KEY:-}
+  smtp:
+    host: "smtp.purelymail.com"
+    port: 465
+    secure: true
+    email: ${MAIL_SMTP_EMAIL:-}
+    password: ${MAIL_SMTP_PASSWORD:-}
+  imap:
+    host: "imap.purelymail.com"
+    port: 993
+    secure: true
+    email: ${MAIL_IMAP_EMAIL:-}
+    password: ${MAIL_IMAP_PASSWORD:-}
+    authTimeout: 3000
+
+paypal:
+  mode: "sandbox"
+  clientId: ${PAYPAL_CLIENT_ID:-}
+  clientSecret: ${PAYPAL_CLIENT_SECRET:-}
+  # Transaction Search API base. Sandbox: https://api-m.sandbox.paypal.com
+  baseUrl: "https://api-m.sandbox.paypal.com"
+  # Login with PayPal (Connect): this exact URL must be registered as a
+  # Return URL in developer.paypal.com → your app → Login with PayPal settings.
+  returnUrl: "https://some-proxy-domain.com/api/auth/paypal/callback"
+  # How far back to pull transactions on each scan (days)
+  lookbackDays: 90
+  pageSize: 100
+  maxPages: 50
+  timeoutMs: 20000
+  # Cache recent days for 10 minutes; revisit older days weekly for status changes.
+  cacheFreshMinutes: 10
+  cacheRecentDays: 7
+  cacheHistoricalHours: 168
+
+razorpay:
+  # Hide Razorpay and disable its API, syncing and payment candidates. Restart after changing.
+  enabled: false
+  # API Key ID & Secret (Dashboard → Settings → API Keys). Test-mode keys start with rzp_test_
+  keyId: ${RAZORPAY_KEY_ID:-}
+  keySecret: ${RAZORPAY_KEY_SECRET:-}
+  baseUrl: "https://api.razorpay.com/v1"
+  # How far back to pull payments on each scan (days)
+  lookbackDays: 90
+  pageSize: 100
+  maxPages: 200
+  timeoutMs: 20000
+  # Cache recent days for 10 minutes; revisit older days weekly for status changes.
+  cacheFreshMinutes: 10
+  cacheRecentDays: 7
+  cacheHistoricalHours: 168
+
+drive:
+  # OAuth scopes needed for folder listing + file download
+  scopes:
+    - https://www.googleapis.com/auth/drive.readonly
+    - https://www.googleapis.com/auth/userinfo.email
+  # MIME types we attempt to process
+  supportedMimeTypes:
+    - application/pdf
+    - image/png
+    - image/jpeg
+    - image/webp
+  maxFileBytes: 15728640
+
+vllm:
+  baseUrl: "https://openrouter.ai/api/v1"
+  apiKey: ${VLLM_API_KEY:-}
+  model: "inclusionai/ling-3.0-flash-vl"
+  concurrency: 3
+  maxRetries: 5
+  backoffBaseMs: 1000
+  backoffMaxMs: 30000
+  timeoutMs: 90000
+  # Extra headers required by OpenRouter (optional)
+  httpReferer: "http://localhost:3000"
+  appTitle: "Invoice Sync"
+
+chat:
+  baseUrl: ${CHAT_BASE_URL:-https://openrouter.ai/api/v1}
+  apiKey: ${CHAT_API_KEY:-}
+  model: ${CHAT_MODEL:-inclusionai/ling-3.1-flash}
+  concurrency: 2
+  maxRetries: 3
+  backoffBaseMs: 1000
+  backoffMaxMs: 15000
+  timeoutMs: 60000
+  maxTokens: 1500
+  httpReferer: "http://localhost:3000"
+  appTitle: "Invoice Sync Chat"
+
+demo:
+  enabled: ${DEMO_ENABLED:-true}
+  email: "demo@invoice-sync.local"
+  name: "Demo Judge"
+
+matching:
+  # date tolerance in days for a "close" match
+  dateToleranceDays: 7
+  amountTolerance: 0.01
+  # Match strength is a heuristic percentage; automatic matches also require validation.
+  matchedThreshold: 60
+  reviewThreshold: 35
+  ambiguityMargin: 15
+
+sync:
+  # how often the scheduler checks for due sync configs
+  pollIntervalMs: 15000
+  # allowed cadences exposed in UI + API
+  allowedCadences:
+    - none
+    - "1m"
+    - "15m"
+    - "1h"
+    - "4h"
+    - "12h"
+    - "24h"
+  cadenceMs:
+    "1m": 60000
+    "15m": 900000
+    "1h": 3600000
+    "4h": 14400000
+    "12h": 43200000
+    "24h": 86400000

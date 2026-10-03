@@ -1,0 +1,95 @@
+{
+  "checkedAt": "2026-10-03T04:01:16.903Z",
+  "checks": [
+    {
+      "id": "3NW819267G615051T",
+      "httpStatus": 200,
+      "status": "COMPLETED",
+      "verified": true
+    },
+    {
+      "id": "6XF242314U308735X",
+      "httpStatus": 200,
+      "status": "COMPLETED",
+      "verified": true
+    },
+    {
+      "id": "8EA49212AB840061H",
+      "httpStatus": 200,
+      "status": "COMPLETED",
+      "verified": true
+    },
+    {
+      "id": "09M15701S78367225",
+      "httpStatus": 200,
+      "status": "COMPLETED",
+      "verified": true
+    },
+    {
+      "id": "5GD02049AK575491W",
+      "httpStatus": 200,
+      "status": "COMPLETED",
+      "verified": true
+    },
+    {
+      "id": "58065594T1312493F",
+      "httpStatus": 200,
+      "status": "COMPLETED",
+      "verified": true
+    },
+    {
+      "id": "0MN48356897056535",
+      "httpStatus": 200,
+      "status": "COMPLETED",
+      "verified": true
+    },
+    {
+      "id": "3N143954RV146890J",
+      "httpStatus": 200,
+      "status": "COMPLETED",
+      "verified": true
+    },
+    {
+      "id": "374993089W169343D",
+      "httpStatus": 200,
+      "status": "COMPLETED",
+      "verified": true
+    },
+    {
+      "id": "7XV91743WF3015115",
+      "httpStatus": 200,
+      "status": "COMPLETED",
+      "verified": true
+    },
+    {
+      "id": "9KM45117AH995291C",
+      "httpStatus": 200,
+      "status": "COMPLETED",
+      "verified": true
+    },
+    {
+      "id": "1LP08233TY954271R",
+      "httpStatus": 200,
+      "status": "COMPLETED",
+      "verified": true
+    },
+    {
+      "id": "4FC35781GH801180X",
+      "httpStatus": 200,
+      "status": "DECLINED",
+      "verified": true
+    },
+    {
+      "id": "32E828543X0858207",
+      "httpStatus": 200,
+      "status": "COMPLETED",
+      "verified": true
+    },
+    {
+      "id": "4CG57153K8224725U",
+      "httpStatus": 200,
+      "status": "COMPLETED",
+      "verified": true
+    }
+  ]
+}

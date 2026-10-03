@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Verify email — Invoice Sync</title>
+<link rel="icon" type="image/svg+xml" href="/logo.svg" />
+<link rel="icon" type="image/png" sizes="32x32" href="/favicon-32.png" />
+<link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/app.css" />
+</head>
+<body>
+<header class="topbar"><div class="wrap" style="display:flex;align-items:center;width:100%;">
+<a class="brand" href="/"><img class="brand-mark" src="/logo.svg" width="30" height="30" alt="" /><span><span class="brand-name">Invoice Sync</span></span></a>
+</div></header>
+<main class="auth-wrap">
+  <div class="card auth-card">
+    <h1>Verify your email</h1>
+    <p class="sub">Click the button below (or paste the link from your inbox).</p>
+    <div class="form-err" id="err"></div>
+    <div class="form-ok" id="ok"></div>
+    <button class="btn btn-primary" style="width:100%;justify-content:center;" id="btn">Verify email</button>
+    <div class="divider">Need a new link?</div>
+    <div class="field"><label class="lbl-field" for="email">Email</label><input class="inp" id="email" type="email" placeholder="you@company.com" /></div>
+    <button class="btn btn-ghost" style="width:100%;justify-content:center;" id="resend">Resend verification email</button>
+    <p class="auth-alt"><a href="/login">Back to login</a></p>
+  </div>
+</main>
+<script type="module">
+import { api, showFormError, showFormOk, redirectWithCountdown } from '/app.js';
+const token = new URLSearchParams(window.location.search).get('token') || '';
+async function verify() {
+  if (!token) { showFormError('err', 'No token in URL. Paste the full link from your email, or request a new one below.'); return; }
+  try {
+    await api('/api/auth/verify-email', { method: 'POST', body: { token } });
+    showFormOk('ok', 'Email verified.');
+    redirectWithCountdown('/login', { seconds: 5, targetId: 'ok', label: 'login' });
+  } catch (err) { showFormError('err', err.message); }
+}
+document.getElementById('btn').addEventListener('click', verify);
+if (token) verify();
+document.getElementById('resend').addEventListener('click', async () => {
+  const email = document.getElementById('email').value;
+  try {
+    const d = await api('/api/auth/resend-verification', { method: 'POST', body: { email } });
+    showFormOk('ok', d.message);
+  } catch (err) { showFormError('err', err.message); }
+});
+</script>
+</body>
+</html>

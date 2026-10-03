@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Continue with Google — Invoice Sync</title>
+<link rel="icon" type="image/svg+xml" href="/logo.svg" />
+<link rel="icon" type="image/png" sizes="32x32" href="/favicon-32.png" />
+<link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/app.css" />
+</head>
+<body>
+<header class="topbar"><div class="wrap" style="display:flex;align-items:center;width:100%;">
+<a class="brand" href="/"><img class="brand-mark" src="/logo.svg" width="30" height="30" alt="" /><span><span class="brand-name">Invoice Sync</span></span></a>
+</div></header>
+<main class="auth-wrap">
+  <div class="card auth-card" style="max-width:460px;">
+    <h1>Continue with Google</h1>
+    <p class="sub">Sign in to your workspace using Google. Connect Google Drive separately in the dashboard.</p>
+    <div class="form-err" id="err"></div>
+    <div class="form-ok" id="ok"></div>
+    <div id="clerk-signin"></div>
+    <p class="auth-alt"><a href="/login">Back to login</a></p>
+  </div>
+</main>
+<script type="module">
+import { api, showFormError } from '/app.js';
+import { loadClerk } from '/clerk-auth.js';
+
+async function boot() {
+  try {
+    const clerk = await loadClerk();
+    const params = new URLSearchParams(location.search);
+    const completeUrl = location.origin + '/clerk-login?done=1';
+    if (params.get('callback') === '1') {
+      await clerk.handleRedirectCallback({
+        signInFallbackRedirectUrl: completeUrl, signUpFallbackRedirectUrl: completeUrl,
+        signInForceRedirectUrl: completeUrl, signUpForceRedirectUrl: completeUrl,
+        signInUrl: '/clerk-login?flow=login', signUpUrl: '/clerk-login?complete=1',
+      });
+      return;
+    }
+    if (clerk.session) {
+      const token = await clerk.session.getToken();
+      await api('/api/auth/clerk', { method: 'POST', body: { token } });
+      sessionStorage.setItem('clerkLogin', '1');
+      location.href = '/dashboard';
+      return;
+    }
+    if (params.get('complete') === '1') {
+      clerk.mountSignUp(document.getElementById('clerk-signin'), {
+        signInUrl: '/login', forceRedirectUrl: completeUrl,
+      });
+      return;
+    }
+    if (params.get('done') === '1') throw new Error('Google sign-in did not complete. Please try again.');
+    const auth = params.get('flow') === 'signup' ? clerk.client.signUp : clerk.client.signIn;
+    await auth.authenticateWithRedirect({
+      strategy: 'oauth_google',
+      redirectUrl: location.origin + '/clerk-login?callback=1',
+      redirectUrlComplete: completeUrl,
+    });
+  } catch (err) { showFormError('err', err.message || 'Google sign-in failed. Please try again.'); }
+}
+boot();
+</script>
+</body>
+</html>

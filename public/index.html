@@ -1,0 +1,334 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Invoice Sync — Match every invoice to its PayPal payment</title>
+<meta name="description" content="Invoice Sync reads invoices from Google Drive folders and direct uploads, syncs PayPal transactions, and matches every invoice to its payment." />
+<link rel="icon" type="image/svg+xml" href="/logo.svg" />
+<link rel="icon" type="image/png" sizes="32x32" href="/favicon-32.png" />
+<link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/app.css" />
+<style>
+  :root { --teal:#0F766E; --teal-deep:#0B4F49; --mint:#E7F3EE; }
+  .lp-hero { display:grid; grid-template-columns: 1.05fr .95fr; gap:36px; align-items:center; padding:64px 0 30px; }
+  @media (max-width:960px){ .lp-hero{ grid-template-columns:1fr; padding-top:44px; } }
+  .lp-eyebrow { display:flex; gap:8px; flex-wrap:wrap; align-items:center; margin-bottom:16px; }
+  .lp-h1 { font-size:52px; line-height:1.02; letter-spacing:-.035em; margin:0 0 16px; font-weight:800; }
+  @media (max-width:600px){ .lp-h1{ font-size:36px; } }
+  .lp-h1 span { color:var(--teal); }
+  .lp-lead { font-size:16.5px; color:var(--body); line-height:1.65; max-width:560px; margin:0 0 22px; }
+  .lp-cta { display:flex; gap:10px; flex-wrap:wrap; align-items:center; }
+  .lp-cta .btn { height:42px; padding:0 20px; font-size:14px; }
+  .lp-note { font-size:12.5px; color:var(--faint); margin-top:12px; }
+  .lp-proof { display:flex; gap:16px; flex-wrap:wrap; margin-top:22px; }
+  .lp-proof div { display:flex; gap:8px; align-items:center; font-size:12.5px; color:var(--muted); font-weight:550; }
+  /* product mock */
+  .lp-mock { background:var(--surface); border:1px solid var(--line); border-radius:18px; box-shadow:0 30px 70px -30px rgba(11,79,73,.35), 0 1px 2px rgba(20,18,15,.06); overflow:hidden; }
+  .lp-mock-bar { display:flex; align-items:center; gap:8px; padding:12px 16px; border-bottom:1px solid var(--line2); background:#FBFAF8; }
+  .lp-dot { width:10px; height:10px; border-radius:50%; }
+  .lp-mock-body { padding:18px; }
+  .lp-ring-row { display:flex; gap:16px; align-items:center; }
+  .lp-ring { width:86px; height:86px; border-radius:50%; flex-shrink:0; display:grid; place-items:center; text-align:center;
+    background:conic-gradient(var(--teal) 0 78%, #E8E5DF 78% 100%); }
+  .lp-ring > div { width:66px; height:66px; border-radius:50%; background:#fff; display:grid; place-items:center; }
+  .lp-ring strong { font-size:19px; letter-spacing:-.02em; display:block; line-height:1; }
+  .lp-ring span { font-size:10px; color:var(--faint); font-weight:600; text-transform:uppercase; letter-spacing:.06em; }
+  .lp-mock-rows { margin-top:14px; display:flex; flex-direction:column; gap:8px; }
+  .lp-row { display:flex; align-items:center; gap:10px; border:1px solid var(--line2); border-radius:12px; padding:10px 12px; font-size:13px; }
+  .lp-row .amt { margin-left:auto; font-weight:700; font-variant-numeric:tabular-nums; }
+  .lp-avatar { width:30px; height:30px; border-radius:9px; display:grid; place-items:center; font-weight:800; font-size:13px; flex-shrink:0; }
+  .lp-stats { display:grid; grid-template-columns:repeat(4,1fr); gap:12px; margin:26px 0 0; }
+  @media (max-width:700px){ .lp-stats{ grid-template-columns:1fr 1fr; } }
+  .lp-section { margin-top:56px; }
+  .lp-kicker { font-size:11.5px; font-weight:700; text-transform:uppercase; letter-spacing:.09em; color:var(--teal); margin:0 0 8px; }
+  .lp-h2 { font-size:28px; letter-spacing:-.025em; margin:0 0 10px; font-weight:750; }
+  .lp-sub { color:var(--muted); font-size:14.5px; line-height:1.65; max-width:680px; margin:0 0 20px; }
+  .lp-source-grid { display:grid; grid-template-columns:1fr 1fr; gap:14px; }
+  @media (max-width:800px){ .lp-source-grid{ grid-template-columns:1fr; } }
+  .lp-source { padding:22px; position:relative; overflow:hidden; }
+  .lp-check { list-style:none; margin:14px 0 0; padding:0; display:flex; flex-direction:column; gap:9px; font-size:13.5px; color:var(--body); }
+  .lp-check li { display:flex; gap:9px; line-height:1.55; }
+  .lp-check li::before { content:"✓"; width:20px; height:20px; border-radius:50%; background:var(--mint); color:var(--teal-deep); display:grid; place-items:center; font-size:12px; font-weight:800; flex-shrink:0; margin-top:1px; }
+  .lp-feat { padding:20px; }
+  .lp-feat .ico { width:36px; height:36px; border-radius:11px; background:var(--mint); display:grid; place-items:center; font-size:18px; }
+  .lp-feat h3 { margin:12px 0 6px; font-size:14.5px; }
+  .lp-feat p { margin:0; font-size:13px; color:var(--muted); line-height:1.65; }
+  .lp-band { display:grid; grid-template-columns:1fr 1fr; gap:14px; }
+  @media (max-width:800px){ .lp-band{ grid-template-columns:1fr; } }
+  .lp-score { display:flex; gap:8px; flex-wrap:wrap; margin-top:12px; }
+  .lp-signal { font-size:12px; font-weight:600; background:var(--sunken); border:1px solid var(--line2); border-radius:99px; padding:6px 11px; }
+  .lp-faq { display:grid; grid-template-columns:1fr 1fr; gap:14px; }
+  @media (max-width:800px){ .lp-faq{ grid-template-columns:1fr; } }
+  .lp-faq .card { padding:18px 20px; }
+  .lp-faq h3 { margin:0 0 6px; font-size:14px; }
+  .lp-faq p { margin:0; font-size:13px; color:var(--muted); line-height:1.6; }
+  .lp-cta-band { margin-top:56px; border-radius:20px; padding:36px; display:flex; gap:20px; align-items:center; flex-wrap:wrap;
+    background:linear-gradient(120deg,#0B4F49,#0F766E 60%,#14A085); color:#fff; border:none; }
+  .lp-cta-band h2 { margin:0 0 8px; font-size:24px; letter-spacing:-.02em; }
+  .lp-cta-band p { margin:0; opacity:.85; font-size:14px; line-height:1.6; }
+  .lp-cta-band .btn-primary { background:#fff; color:#0B4F49; }
+  .lp-cta-band .btn-ghost { background:transparent; border-color:rgba(255,255,255,.35); color:#fff; }
+  /* Demo mode spotlight */
+  .demo-strip {
+    margin-top:18px; border-radius:16px; padding:16px 20px;
+    display:flex; align-items:center; gap:14px; flex-wrap:wrap;
+    background:linear-gradient(100deg,#7C2D12,#B45309 45%,#D97706);
+    color:#fff; border:1px solid #92400E;
+    box-shadow:0 18px 44px -18px rgba(180,83,9,.65), 0 1px 2px rgba(20,18,15,.12);
+  }
+  .demo-strip .demo-badge {
+    display:inline-flex; align-items:center; gap:6px;
+    background:#fff; color:#92400E; font-weight:800; font-size:11.5px;
+    letter-spacing:.07em; text-transform:uppercase;
+    border-radius:99px; padding:6px 12px; flex-shrink:0;
+  }
+  .demo-strip strong { font-size:16px; letter-spacing:-.01em; }
+  .demo-strip p { margin:2px 0 0; font-size:13px; opacity:.92; line-height:1.5; }
+  .demo-strip .btn-demo-solid {
+    margin-left:auto; background:#fff; color:#92400E; font-weight:750;
+    height:44px; padding:0 22px; font-size:14.5px; border-radius:12px;
+    box-shadow:0 8px 20px -8px rgba(0,0,0,.45);
+  }
+  .demo-strip .btn-demo-solid:hover { background:#FFFBEB; }
+  .lp-cta .btn-demo {
+    background:linear-gradient(180deg,#F59E0B,#D97706); color:#fff; border:1px solid #B45309;
+    height:46px; padding:0 24px; font-size:15px; font-weight:750;
+    box-shadow:0 12px 26px -10px rgba(217,119,6,.7);
+    animation:demoPulse 2.4s ease-in-out infinite;
+  }
+  .lp-cta .btn-demo:hover { filter:brightness(1.05); }
+  @keyframes demoPulse {
+    0%,100% { box-shadow:0 12px 26px -10px rgba(217,119,6,.7); }
+    50% { box-shadow:0 12px 34px -6px rgba(217,119,6,.9); }
+  }
+</style>
+</head>
+<body>
+<header class="topbar">
+  <div class="wrap" style="display:flex;align-items:center;gap:12px;width:100%;">
+    <a class="brand" href="/">
+      <img class="brand-mark" src="/logo.svg" width="32" height="32" alt="Invoice Sync logo" />
+      <span><span class="brand-name">Invoice Sync</span><br><span class="brand-sub">Invoice ↔ PayPal reconciliation</span></span>
+    </a>
+    <nav class="nav-links">
+      <a href="#sources">Sources</a>
+      <a href="#how">How it works</a>
+      <a href="#matching">Matching</a>
+      <a href="#features">Features</a>
+    </nav>
+    <span style="flex:1"></span>
+    <a class="btn btn-quiet" href="/login">Log in</a>
+    <a class="btn btn-primary" href="/signup">Get started</a>
+  </div>
+</header>
+
+<main class="wrap">
+  <!-- DEMO SPOTLIGHT -->
+  <div class="demo-strip" data-demo-spotlight>
+    <span class="demo-badge">✨ Demo mode · No keys needed</span>
+    <div style="min-width:220px;flex:1;">
+      <strong>Explore with one click — sample invoices + payments.</strong>
+      <p>Instant demo workspace, no Drive / PayPal / email setup. Reset anytime from the dashboard.</p>
+    </div>
+    <button class="btn btn-demo-solid" data-demo-btn type="button">Launch demo workspace →</button>
+  </div>
+  <!-- HERO -->
+  <section class="lp-hero">
+    <div>
+      <div class="lp-eyebrow">
+        <span class="chip chip-pos">Automatically match invoices with PayPal transactions</span>
+      </div>
+      <h1 class="lp-h1">Every invoice,<br><span>matched to its payment.</span></h1>
+      <p class="lp-lead">Invoice Sync collects invoices from your Google Drive folders and direct uploads, reads each PDF or image with AI, syncs your PayPal transactions, and shows exactly what's matched, what needs a review, and what's still outstanding.</p>
+      <div class="lp-cta">
+        <a class="btn btn-primary" href="/signup">Start syncing — it's free</a>
+        <a class="btn btn-ghost" href="/dashboard">Open dashboard</a>
+        <button class="btn btn-demo" data-demo-btn id="demoBtn" type="button">✨ Try Demo — no keys needed →</button>
+      </div>
+      <p class="lp-note">Free to start · Email + Google sign-in · Your Drive stays read-only</p>
+      <div class="lp-proof">
+        <div>🧾 PDF · PNG · JPEG · WebP</div>
+        <div>🤖 AI field extraction</div>
+        <div>🔗 Amount + date + reference scoring</div>
+      </div>
+      <div class="grid-4" style="margin-top:22px;">
+        <div class="card card-pad"><div class="lbl">Invoices</div><div class="stat-val tnum" id="statInv">—</div><div class="stat-sub">Drive + uploads</div></div>
+        <div class="card card-pad"><div class="lbl">Payments</div><div class="stat-val tnum" id="statTxn">—</div><div class="stat-sub">PayPal synced</div></div>
+        <div class="card card-pad"><div class="lbl">Matched</div><div class="stat-val tnum" id="statMatch">—</div><div class="stat-sub">Confirmed links</div></div>
+        <div class="card card-pad"><div class="lbl">Sync cadence</div><div class="stat-val tnum" style="font-size:19px;padding-top:5px;">1m – 24h</div><div class="stat-sub">Or run manually</div></div>
+      </div>
+    </div>
+    <div class="lp-mock" aria-hidden="true">
+      <div class="lp-mock-bar">
+        <span class="lp-dot" style="background:#E26D5A"></span><span class="lp-dot" style="background:#E8C547"></span><span class="lp-dot" style="background:#10B981"></span>
+        <span class="small muted" style="margin-left:6px;">Reconciliation report · November</span>
+        <span style="flex:1"></span><span class="chip chip-pos">78% matched</span>
+      </div>
+      <div class="lp-mock-body">
+        <div class="lp-ring-row">
+          <div class="lp-ring"><div><div><strong>78%</strong><span>matched</span></div></div></div>
+          <div>
+            <div style="font-weight:700;font-size:14.5px;">Month-end is almost closed</div>
+            <div class="small muted" style="margin-top:4px;line-height:1.5;">3 invoices need a review · 2 still unmatched.<br>Values kept separate per currency.</div>
+          </div>
+        </div>
+        <div class="lp-mock-rows">
+          <div class="lp-row"><span class="lp-avatar" style="background:#E7F3EE;color:#0B4F49;">A</span><div><strong>Acme Studio</strong><div class="small muted">INV-2041 · Nov 12</div></div><span class="chip chip-pos">Matched</span><span class="amt">USD 1,240.00</span></div>
+          <div class="lp-row"><span class="lp-avatar" style="background:#FBF1E1;color:#96631B;">B</span><div><strong>Brightline Co</strong><div class="small muted">INV-2042 · Nov 14</div></div><span class="chip chip-warn">Needs review</span><span class="amt">USD 860.50</span></div>
+          <div class="lp-row"><span class="lp-avatar" style="background:#EAF1F9;color:#2C5C99;">N</span><div><strong>Northwind</strong><div class="small muted">No number · Nov 18</div></div><span class="chip chip-neutral">Unmatched</span><span class="amt">EUR 412.00</span></div>
+        </div>
+        <div class="small muted" style="margin-top:12px;">Side-by-side original + extracted data · one-click confirm or override.</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- SOURCES -->
+  <section class="lp-section" id="sources">
+    <p class="lp-kicker">Invoice sources</p>
+    <h2 class="lp-h2">Two ways to bring invoices in.</h2>
+    <p class="lp-sub">Connect the folders where invoices already land, or drop files in directly. Both flow through the same extraction and matching pipeline.</p>
+    <div class="lp-source-grid">
+      <div class="card lp-source">
+        <span class="chip chip-pos">Available now</span>
+        <h3 style="margin:12px 0 6px;font-size:16px;">Google Drive sync</h3>
+        <p class="small muted" style="margin:0;line-height:1.6;">Pick one or more folders from a live folder tree. Subfolders are included, overlapping picks are deduplicated.</p>
+        <ul class="lp-check">
+          <li>PDF + image invoices, first-page render for scanned PDFs</li>
+          <li>Already-scanned files skipped — re-scan one file or a whole folder</li>
+          <li>File browser + preview without leaving the dashboard</li>
+        </ul>
+      </div>
+      <div class="card lp-source">
+        <span class="chip chip-pos">Available now</span>
+        <h3 style="margin:12px 0 6px;font-size:16px;">Direct invoice uploads</h3>
+        <p class="small muted" style="margin:0;line-height:1.6;">Drop invoice PDFs and images straight into Invoice Sync — no Drive step required. Same AI extraction, same match review.</p>
+        <ul class="lp-check">
+          <li>Drag-and-drop upload queue with extraction status</li>
+          <li>Same matching, review, and recurring-sync behavior</li>
+          <li>Works alongside Drive sync in one library</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <!-- HOW -->
+  <section class="lp-section" id="how">
+    <p class="lp-kicker">How it works</p>
+    <h2 class="lp-h2">From folder to matched in three steps</h2>
+    <p class="lp-sub">A calm, repeatable flow — built for weekly bookkeeping and month-end alike.</p>
+    <div class="grid-3 steps">
+      <div class="card step"><span class="step-num">1</span><div><strong>Connect Drive + PayPal</strong><p class="small muted" style="margin:6px 0 0;line-height:1.6;">Authorize read-only Drive access, tick your invoice folders or upload files directly, and link PayPal with login or app credentials.</p></div></div>
+      <div class="card step"><span class="step-num">2</span><div><strong>Scan once, skip repeats</strong><p class="small muted" style="margin:6px 0 0;line-height:1.6;">Files are fingerprinted by Drive ID + modified time. Only new or changed files are processed — unless you force a re-scan.</p></div></div>
+      <div class="card step"><span class="step-num">3</span><div><strong>Review with confidence</strong><p class="small muted" style="margin:6px 0 0;line-height:1.6;">Open the original beside the extracted fields, confirm the suggested payment or pick another. Your call sticks through future scans.</p></div></div>
+    </div>
+  </section>
+
+  <!-- MATCHING -->
+  <section class="lp-section" id="matching">
+    <div class="lp-band">
+      <div>
+        <p class="lp-kicker">Matching, explained</p>
+        <h2 class="lp-h2">A score you can audit, not a black box</h2>
+        <p class="lp-sub">Every candidate payment shows its signals and conflicts — strength, payer, amount, date, and the raw payment detail. Auto-confirm only happens when amount, currency, and identity all agree with no rivals.</p>
+        <div class="lp-score">
+          <span class="lp-signal">Invoice ref · strongest</span>
+          <span class="lp-signal">Amount · 30</span>
+          <span class="lp-signal">Payer email · 20</span>
+          <span class="lp-signal">Currency · 10</span>
+          <span class="lp-signal">Date proximity · 10 / 5</span>
+        </div>
+      </div>
+      <div class="card card-pad">
+        <div class="lbl">Decision bands</div>
+        <div style="display:flex;flex-direction:column;gap:10px;margin-top:12px;">
+          <div class="lp-row"><span class="chip chip-pos">≥ 60 · Matched</span><span class="small muted">Exact amount + currency, identifier or email, no conflicts</span></div>
+          <div class="lp-row"><span class="chip chip-warn">35–59 · Needs review</span><span class="small muted">Close, partial, or ambiguous — you decide</span></div>
+          <div class="lp-row"><span class="chip chip-neutral">&lt; 35 · Unmatched</span><span class="small muted">Kept visible in the attention queue</span></div>
+        </div>
+        <p class="small muted" style="margin:12px 0 0;line-height:1.6;">Competing invoices and shared payments always go to review. Manual matches and unmatches survive recurring scans.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- FEATURES -->
+  <section class="lp-section" id="features">
+    <p class="lp-kicker">Everything included</p>
+    <h2 class="lp-h2">Designed for real reconciliation work</h2>
+    <p class="lp-sub">The full loop — ingest, extract, sync, match, review, and stay in sync — without spreadsheets.</p>
+    <div class="grid-3">
+      <div class="card lp-feat"><div class="ico">🧾</div><h3>Vision invoice extraction</h3><p>PDF text plus image invoices go through a vision-language model. Missing fields become nulls — never guesses. Fenced JSON is parsed with retries on rate limits.</p></div>
+      <div class="card lp-feat"><div class="ico">💳</div><h3>PayPal sync with smart cache</h3><p>Transaction Search with pagination and a configurable lookback. Completed day-coverage is cached, recent days refresh fast, statuses stay correct.</p></div>
+      <div class="card lp-feat"><div class="ico">🔍</div><h3>Side-by-side review</h3><p>Original file next to extracted data, ranked payment candidates with signals and conflicts, searchable by ID, email, or amount.</p></div>
+      <div class="card lp-feat"><div class="ico">⏰</div><h3>Recurring sync, 1m – 24h</h3><p>Per-account schedules that survive restarts and shut down gracefully. Or leave it off and scan manually whenever you like.</p></div>
+      <div class="card lp-feat"><div class="ico">📧</div><h3>Email that lands in Sent</h3><p>Verification, password reset, and scan-complete reports queue reliably, send with bounded concurrency, and copy to Sent.</p></div>
+      <div class="card lp-feat"><div class="ico">🔒</div><h3>Private by design</h3><p>Scoped read-only Drive access, per-user PayPal credentials, Postgres-backed payment cache, and expiring auth tokens throughout.</p></div>
+    </div>
+  </section>
+
+  <!-- FAQ / CLARIFICATIONS -->
+  <section class="lp-section">
+    <div class="lp-faq">
+      <div class="card"><h3>Do I need to reorganize my Drive?</h3><p>No. Select any folders — we'll include subfolders automatically and deduplicate overlaps. Add or remove folders anytime.</p></div>
+      <div class="card"><h3>Can I upload invoices directly?</h3><p>Yes — drop PDFs and images straight in, or sync a Drive folder. Both use the same extraction and review flow.</p></div>
+      <div class="card"><h3>What counts as a match?</h3><p>Exact amount and currency plus a strong identity signal (structured invoice reference or payer email), with no conflicting fields or rival candidates.</p></div>
+      <div class="card"><h3>What happens on re-scans?</h3><p>Unchanged files are skipped. Your manual confirms and unmatches are preserved; only new or changed items get re-scored.</p></div>
+    </div>
+  </section>
+
+  <section class="card lp-cta-band">
+    <div style="flex:1;min-width:240px;">
+      <h2>Close this month's books with confidence.</h2>
+      <p>Connect a Drive folder or upload invoices directly, link PayPal, and run your first scan in minutes.</p>
+    </div>
+    <div style="display:flex;gap:10px;flex-wrap:wrap;">
+      <a class="btn btn-primary" href="/signup">Create account</a>
+      <a class="btn btn-ghost" href="/login">Log in</a>
+      <button class="btn" data-demo-btn type="button" style="background:#fff;color:#0B4F49;font-weight:750;height:42px;padding:0 20px;">✨ Or launch demo →</button>
+    </div>
+  </section>
+
+  <footer class="footer" style="display:flex;gap:12px;align-items:center;flex-wrap:wrap;">
+    <img src="/logo.svg" width="22" height="22" alt="" />
+    <span>© 2026 Invoice Sync · Drive, uploads + PayPal invoice reconciliation</span>
+    <span style="flex:1"></span>
+    <a href="#sources" style="text-decoration:none;">Sources</a>
+    <a href="#matching" style="text-decoration:none;">Matching</a>
+    <a href="/dashboard" style="text-decoration:none;">Dashboard</a>
+  </footer>
+</main>
+<script>
+  async function startDemo(btn) {
+    const original = btn ? btn.textContent : '';
+    if (btn) { btn.disabled = true; btn.textContent = 'Preparing demo…'; }
+    document.querySelectorAll('[data-demo-btn]').forEach(b => { if (b !== btn) b.disabled = true; });
+    try {
+      const r = await fetch('/api/auth/demo', { method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'include', body: '{}' });
+      if (!r.ok) throw new Error('Demo unavailable — is the server running?');
+      window.location.href = '/dashboard';
+    } catch (err) {
+      alert(err.message);
+      document.querySelectorAll('[data-demo-btn]').forEach(b => { b.disabled = false; });
+      if (btn) btn.textContent = original;
+    }
+  }
+  document.querySelectorAll('[data-demo-btn]').forEach(b => b.addEventListener('click', () => startDemo(b)));
+  // Hide demo entry points if the server disabled demo mode.
+  fetch('/api/auth/config', { credentials: 'include' }).then(r => r.ok ? r.json() : null).then(cfg => {
+    if (cfg && cfg.demoEnabled === false) {
+      document.querySelectorAll('[data-demo-btn],[data-demo-spotlight]').forEach(el => { el.hidden = true; });
+    }
+  }).catch(() => {});
+  fetch('/api/dashboard/overview', { credentials: 'include' }).then(r => r.ok ? r.json() : null).then(d => {
+    if (!d) return;
+    const set = (id, v) => { const el = document.getElementById(id); if (el && v !== undefined && v !== null) el.textContent = v; };
+    set('statInv', d.invoices.total);
+    set('statTxn', d.transactions.total);
+    set('statMatch', d.matches.matched);
+  }).catch(() => {});
+</script>
+</body>
+</html>
